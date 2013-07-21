@@ -1,4 +1,4 @@
-package org.cyanogenmod.babel;
+package org.cyanogenmod.voiceplus;
 
 import android.content.Context;
 import android.net.wifi.WifiManager;

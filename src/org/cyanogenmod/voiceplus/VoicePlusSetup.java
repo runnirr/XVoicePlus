@@ -1,4 +1,4 @@
-package org.cyanogenmod.babel;
+package org.cyanogenmod.voiceplus;
 
 import android.Manifest;
 import android.accounts.Account;
@@ -20,10 +20,10 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
-public class Babel extends Activity {
+public class VoicePlusSetup extends Activity {
     class AccountAdapter extends ArrayAdapter<Account> {
         AccountAdapter() {
-            super(Babel.this, android.R.layout.simple_list_item_single_choice);
+            super(VoicePlusSetup.this, android.R.layout.simple_list_item_single_choice);
         }
 
         @Override
@@ -102,7 +102,7 @@ public class Babel extends Activity {
         lv.setItemChecked(selected, true);
         lv.requestLayout();
 
-        startService(new Intent(this, BabelService.class));
+        startService(new Intent(this, VoicePlusService.class));
     }
 
     void getToken(final Account account, final int position) {

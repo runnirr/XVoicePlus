@@ -1,4 +1,4 @@
-package org.cyanogenmod.babel;
+package org.cyanogenmod.voiceplus;
 
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -20,9 +20,9 @@ public class PackageChangeReceiver extends BroadcastReceiver {
         if (pm == null)
             return;
 
-        ComponentName service = new ComponentName(context, BabelService.class);
+        ComponentName service = new ComponentName(context, VoicePlusService.class);
         ComponentName receiver = new ComponentName(context, OutgoingSmsReceiver.class);
-        ComponentName activity = new ComponentName(context, Babel.class);
+        ComponentName activity = new ComponentName(context, VoicePlusSetup.class);
 
         try {
             PackageInfo pkg = pm.getPackageInfo(Helper.GOOGLE_VOICE_PACKAGE, 0);

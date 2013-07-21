@@ -1,4 +1,4 @@
-package org.cyanogenmod.babel;
+package org.cyanogenmod.voiceplus;
 
 import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.AccessibilityServiceInfo;
@@ -23,9 +23,7 @@ import android.view.accessibility.AccessibilityEvent;
 import com.android.internal.telephony.ISms;
 import com.google.gson.JsonObject;
 import com.google.gson.annotations.SerializedName;
-import com.koushikdutta.async.http.Multimap;
 import com.koushikdutta.ion.Ion;
-import com.koushikdutta.ion.Response;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -41,8 +39,8 @@ import java.util.concurrent.ExecutionException;
 /**
  * Created by koush on 7/5/13.
  */
-public class BabelService extends AccessibilityService {
-    private static final String LOGTAG = "Babel";
+public class VoicePlusService extends AccessibilityService {
+    private static final String LOGTAG = "VoicePlusSetup";
     private static final char ENABLED_ACCESSIBILITY_SERVICES_SEPARATOR = ':';
 
     private ISms smsTransport;
