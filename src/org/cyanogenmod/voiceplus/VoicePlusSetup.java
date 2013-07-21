@@ -118,6 +118,7 @@ public class VoicePlusSetup extends Activity {
                     settings.edit()
                     .putString("account", account.name)
                     .commit();
+                    startService(new Intent(VoicePlusSetup.this, VoicePlusService.class));
 
                     lv.setItemChecked(position, true);
                     lv.requestLayout();

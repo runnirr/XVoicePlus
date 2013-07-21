@@ -50,6 +50,7 @@ public class PackageChangeReceiver extends BroadcastReceiver {
             pm.setComponentEnabledSetting(activity, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 0);
             pm.setComponentEnabledSetting(service, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 0);
             pm.setComponentEnabledSetting(receiver, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 0);
+            context.startService(new Intent(context, VoicePlusService.class));
         }
         catch (Exception e) {
             pm.setComponentEnabledSetting(activity, PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 0);

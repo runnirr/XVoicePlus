@@ -362,6 +362,8 @@ public class VoicePlusService extends AccessibilityService {
         if (account == null)
             return;
 
+        Log.i(LOGTAG, "Refreshing messages");
+
         try {
             // tokens!
             Bundle bundle = AccountManager.get(this).getAuthToken(new Account(account, "com.google"), "grandcentral", true, null, null).getResult();
