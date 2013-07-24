@@ -11,6 +11,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -77,6 +78,15 @@ public class VoicePlusSetup extends Activity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Account account = accountAdapter.getItem(position);
+
+                final String previousAccount = settings.getString("account", null);
+                new Thread() {
+                    @Override
+                    public void run() {
+                        super.run();invalidateToken(previousAccount);
+                    }
+                }.start();
+
                 if (account == NULL) {
                     settings.edit().remove("account").remove("rnrse").commit();
                     return;
@@ -105,6 +115,24 @@ public class VoicePlusSetup extends Activity {
         startService(new Intent(this, VoicePlusService.class));
     }
 
+    void invalidateToken(String account) {
+        if (account == null)
+            return;
+
+        try {
+            // grab the auth token
+            Bundle bundle = AccountManager.get(this).getAuthToken(new Account(account, "com.google"), "grandcentral", true, null, null).getResult();
+            String authToken = bundle.getString(AccountManager.KEY_AUTHTOKEN);
+            AccountManager.get(this).invalidateAuthToken("com.google", authToken);
+            Log.i(LOGTAG, "Token invalidated.");
+        }
+        catch (Exception e) {
+            Log.e(LOGTAG, "error invalidating token", e);
+        }
+    }
+
+    private static final String LOGTAG = "VoicePlusSetup";
+
     void getToken(final Account account, final int position) {
         AccountManager am = AccountManager.get(this);
         if (am == null)
@@ -118,10 +146,13 @@ public class VoicePlusSetup extends Activity {
                     settings.edit()
                     .putString("account", account.name)
                     .commit();
-                    startService(new Intent(VoicePlusSetup.this, VoicePlusService.class));
+                    Intent intent = new Intent(VoicePlusSetup.this, VoicePlusService.class);
+                    intent.setAction(VoicePlusService.ACCOUNT_CHANGED);
+                    startService(intent);
 
                     lv.setItemChecked(position, true);
                     lv.requestLayout();
+                    Log.i(LOGTAG, "Token retrieved.");
                 }
                 catch (Exception ex) {
                     ex.printStackTrace();
