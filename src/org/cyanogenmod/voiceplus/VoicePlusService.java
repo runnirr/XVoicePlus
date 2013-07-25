@@ -319,7 +319,7 @@ public class VoicePlusService extends AccessibilityService {
     // send an outgoing sms event via google voice
     public void onSendMultipartText(String destAddr, String scAddr, List<String> texts, final List<PendingIntent> sentIntents, final List<PendingIntent> deliveryIntents, boolean multipart) {
         // grab the account and wacko opaque routing token thing
-        String rnrse = settings.getString("_rns_se", null);
+        String rnrse = settings.getString("_rnr_se", null);
         String account = settings.getString("account", null);
         String authToken;
 
@@ -329,7 +329,7 @@ public class VoicePlusService extends AccessibilityService {
 
             if (rnrse == null) {
                 fetchRnrSe(authToken);
-                rnrse = settings.getString("_rns_se", null);
+                rnrse = settings.getString("_rnr_se", null);
             }
         }
         catch (Exception e) {
@@ -360,7 +360,7 @@ public class VoicePlusService extends AccessibilityService {
         try {
             // on failure, fetch info and try again
             fetchRnrSe(authToken);
-            rnrse = settings.getString("_rns_se", null);
+            rnrse = settings.getString("_rnr_se", null);
             sendRnrSe(authToken, rnrse, destAddr, text);
             addRecent(text);
             success(sentIntents);
