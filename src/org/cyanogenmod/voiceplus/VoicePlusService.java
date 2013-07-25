@@ -533,6 +533,7 @@ public class VoicePlusService extends AccessibilityService {
 
     // clear the google voice notification so the user doesn't get double notified.
     Method cancelAllNotifications;
+    Object internalNotificationService;
     int userId;
     private void clearGoogleVoiceNotifications() {
         try {
@@ -543,7 +544,7 @@ public class VoicePlusService extends AccessibilityService {
 
                 Field f = NotificationManager.class.getDeclaredField("sService");
                 f.setAccessible(true);
-                Object internalNotificationService = f.get(null);
+                internalNotificationService = f.get(null);
                 cancelAllNotifications = internalNotificationService.getClass().getDeclaredMethod("cancelAllNotifications", String.class, int.class);
                 userId = (Integer)UserHandle.class.getDeclaredMethod("myUserId").invoke(null);
             }
@@ -551,7 +552,7 @@ public class VoicePlusService extends AccessibilityService {
                 cancelAllNotifications.invoke(internalNotificationService, Helper.GOOGLE_VOICE_PACKAGE, userId);
         }
         catch (Exception e) {
-            Log.d(LOGTAG, "Error clearing GoogleVoice notifications", e);
+            Log.e(LOGTAG, "Error clearing GoogleVoice notifications", e);
         }
     }
 
