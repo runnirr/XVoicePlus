@@ -298,7 +298,7 @@ public class VoicePlusService extends AccessibilityService {
         }
 
         settings.edit()
-        .putString("_rns_se", rnrse)
+        .putString("_rnr_se", rnrse)
         .commit();
     }
 

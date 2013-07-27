@@ -28,11 +28,15 @@ public class PackageChangeReceiver extends BroadcastReceiver {
         ComponentName receiver = new ComponentName(context, OutgoingSmsReceiver.class);
         ComponentName activity = new ComponentName(context, VoicePlusSetup.class);
 
+        PackageInfo pkg;
         try {
-            PackageInfo pkg = pm.getPackageInfo(Helper.GOOGLE_VOICE_PACKAGE, 0);
-            if (pkg == null)
-                throw new Exception();
+            pkg = pm.getPackageInfo(Helper.GOOGLE_VOICE_PACKAGE, 0);
+        }
+        catch (Exception e) {
+            pkg = null;
+        }
 
+        if (pkg != null) {
             SharedPreferences settings = context.getSharedPreferences("settings", Context.MODE_PRIVATE);
             if (!settings.getBoolean("pestered", false)) {
                 Notification.Builder builder = new Notification.Builder(context);
@@ -52,7 +56,7 @@ public class PackageChangeReceiver extends BroadcastReceiver {
             pm.setComponentEnabledSetting(receiver, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 0);
             context.startService(new Intent(context, VoicePlusService.class));
         }
-        catch (Exception e) {
+        else {
             pm.setComponentEnabledSetting(activity, PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 0);
             pm.setComponentEnabledSetting(service, PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 0);
             pm.setComponentEnabledSetting(receiver, PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 0);
