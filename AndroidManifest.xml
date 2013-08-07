@@ -21,6 +21,7 @@
 
     <uses-permission android:name="android.permission.INTERCEPT_SMS" />
     <uses-permission android:name="android.permission.BROADCAST_SMS" />
+    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
     <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
     <uses-permission android:name="android.permission.CANCEL_NOTIFICATIONS" />
 

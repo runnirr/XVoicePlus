@@ -196,9 +196,12 @@ public class VoicePlusService extends AccessibilityService {
     public int onStartCommand(final Intent intent, int flags, int startId) {
         super.onStartCommand(intent, flags, startId);
 
-        if (null != settings.getString("account", null)) {
-            ensureEnabled();
+        if (null == settings.getString("account", null)) {
+            stopSelf();
+            return START_NOT_STICKY;
         }
+
+        ensureEnabled();
 
         if (intent == null)
             return START_STICKY;
@@ -587,6 +590,9 @@ public class VoicePlusService extends AccessibilityService {
     Thread refreshThread;
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
+        if (null == settings.getString("account", null))
+            return;
+
         if (event.getEventType() != AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED)
             return;
 
