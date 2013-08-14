@@ -1,14 +1,12 @@
 package org.cyanogenmod.voiceplus;
 
-import android.accessibilityservice.AccessibilityService;
-import android.accessibilityservice.AccessibilityServiceInfo;
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.accounts.AuthenticatorException;
 import android.accounts.OperationCanceledException;
 import android.app.Activity;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.ContentValues;
@@ -21,13 +19,11 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.os.UserHandle;
 import android.provider.Settings;
 import android.telephony.PhoneNumberUtils;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Log;
-import android.view.accessibility.AccessibilityEvent;
 
 import com.android.internal.telephony.ISms;
 import com.google.gson.JsonElement;
@@ -36,78 +32,54 @@ import com.google.gson.annotations.SerializedName;
 import com.koushikdutta.ion.Ion;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 /**
  * Created by koush on 7/5/13.
  */
-public class VoicePlusService extends AccessibilityService {
+public class VoicePlusService extends Service {
+    public static final String ACTION_INCOMING_VOICE = VoicePlusService.class.getPackage().getName() + ".INCOMING_VOICE";
     private static final String LOGTAG = "VoicePlusSetup";
-    private static final char ENABLED_ACCESSIBILITY_SERVICES_SEPARATOR = ':';
 
     private ISms smsTransport;
     private SharedPreferences settings;
 
-    // check which accessibility services are enabled
-    private Set<ComponentName> getEnabledServicesFromSettings() {
-        String enabledServicesSetting = Settings.Secure.getString(getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
-        if (enabledServicesSetting == null) {
-            enabledServicesSetting = "";
-        }
-        Set<ComponentName> enabledServices = new HashSet<ComponentName>();
-        TextUtils.SimpleStringSplitter colonSplitter = new TextUtils.SimpleStringSplitter(ENABLED_ACCESSIBILITY_SERVICES_SEPARATOR);
-        colonSplitter.setString(enabledServicesSetting);
-        while (colonSplitter.hasNext()) {
-            String componentNameString = colonSplitter.next();
-            ComponentName enabledService = ComponentName.unflattenFromString(
-            componentNameString);
-            if (enabledService != null) {
-                enabledServices.add(enabledService);
-            }
-        }
-        return enabledServices;
+    @Override
+    public IBinder onBind(Intent intent) {
+        return null;
     }
 
-    // ensure that this accessibility service is enabled.
+    // ensure that this notification listener is enabled.
     // the service watches for google voice notifications to know when to check for new
     // messages.
+    final String ENABLED_NOTIFICATION_LISTENERS = "enabled_notification_listeners"; //Settings.Secure.ENABLED_NOTIFICATION_LISTENERS
     private void ensureEnabled() {
-        Set<ComponentName> enabledServices = getEnabledServicesFromSettings();
-        ComponentName me = new ComponentName(this, getClass());
-        if (enabledServices.contains(me) && connected)
-            return;
+        ComponentName me = new ComponentName(this, VoiceListenerService.class);
+        String meFlattened = me.flattenToString();
 
-        enabledServices.add(me);
+        String existingListeners = Settings.Secure.getString(getContentResolver(),
+                ENABLED_NOTIFICATION_LISTENERS);
 
-        // Update the enabled services setting.
-        StringBuilder enabledServicesBuilder = new StringBuilder();
-        // Keep the enabled services even if they are not installed since we
-        // have no way to know whether the application restore process has
-        // completed. In general the system should be responsible for the
-        // clean up not settings.
-        for (ComponentName enabledService : enabledServices) {
-            enabledServicesBuilder.append(enabledService.flattenToString());
-            enabledServicesBuilder.append(ENABLED_ACCESSIBILITY_SERVICES_SEPARATOR);
+        if (!TextUtils.isEmpty(existingListeners)) {
+            if (existingListeners.contains(meFlattened)) {
+                return;
+            } else {
+                existingListeners += ":" + meFlattened;
+            }
+        } else {
+            existingListeners = meFlattened;
         }
-        final int enabledServicesBuilderLength = enabledServicesBuilder.length();
-        if (enabledServicesBuilderLength > 0) {
-            enabledServicesBuilder.deleteCharAt(enabledServicesBuilderLength - 1);
-        }
-        Settings.Secure.putString(getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES, enabledServicesBuilder.toString());
 
-        // Update accessibility enabled.
-        Settings.Secure.putInt(getContentResolver(), Settings.Secure.ACCESSIBILITY_ENABLED, 0);
-        Settings.Secure.putInt(getContentResolver(), Settings.Secure.ACCESSIBILITY_ENABLED, 1);
+        Settings.Secure.putString(getContentResolver(),
+        ENABLED_NOTIFICATION_LISTENERS,
+        existingListeners);
     }
 
     // hook into sms manager to be able to synthesize SMS events.
@@ -125,18 +97,22 @@ public class VoicePlusService extends AccessibilityService {
         }
     }
 
-    private void registerConnectivityListener() {
-        IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
-        registerReceiver(new BroadcastReceiver() {
-            public void onReceive(Context context, Intent intent) {
-                if (!needsRefresh)
-                    return;
-                ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-                NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-                if (activeNetworkInfo != null)
-                    startRefresh();
-            }
-        }, filter);
+    BroadcastReceiver mConnectivityReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (!needsRefresh)
+                return;
+            ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+            NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+            if (activeNetworkInfo != null)
+                startRefresh();
+        }
+    };
+
+   @Override
+    public void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(mConnectivityReceiver);
     }
 
     @Override
@@ -146,37 +122,11 @@ public class VoicePlusService extends AccessibilityService {
         settings = getSharedPreferences("settings", MODE_PRIVATE);
 
         registerSmsMiddleware();
-        clearGoogleVoiceNotifications();
-        registerConnectivityListener();
+
+        IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
+        registerReceiver(mConnectivityReceiver, filter);
 
         startRefresh();
-    }
-
-    boolean connected;
-
-    @Override
-    public boolean onUnbind(Intent intent) {
-        connected = false;
-        return super.onUnbind(intent);
-    }
-
-    // set the accessibility filter to
-    // watch only for google voice notifications
-    @Override
-    protected void onServiceConnected (){
-        super.onServiceConnected();
-        connected = true;
-
-        AccessibilityServiceInfo info = new AccessibilityServiceInfo();
-        // We are interested in all types of accessibility events.
-        info.eventTypes = AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED;
-        // We want to provide specific type of feedback.
-        info.feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC;
-        // We want to receive events in a certain interval.
-        info.notificationTimeout = 100;
-        // We want to receive accessibility events only from certain packages.
-        info.packageNames = new String[] { Helper.GOOGLE_VOICE_PACKAGE };
-        setServiceInfo(info);
     }
 
     // parse out the intent extras from android.intent.action.NEW_OUTGOING_SMS
@@ -194,17 +144,17 @@ public class VoicePlusService extends AccessibilityService {
 
     @Override
     public int onStartCommand(final Intent intent, int flags, int startId) {
-        super.onStartCommand(intent, flags, startId);
+        int ret = super.onStartCommand(intent, flags, startId);
 
         if (null == settings.getString("account", null)) {
             stopSelf();
-            return START_NOT_STICKY;
+            return ret;
         }
 
         ensureEnabled();
 
         if (intent == null)
-            return START_STICKY;
+            return ret;
 
         // handle an outgoing sms on a background thread.
         if ("android.intent.action.NEW_OUTGOING_SMS".equals(intent.getAction())) {
@@ -214,6 +164,11 @@ public class VoicePlusService extends AccessibilityService {
                     handleOutgoingSms(intent);
                 }
             }.start();
+        }
+        else if (ACTION_INCOMING_VOICE.equals(intent.getAction())) {
+            if (null == settings.getString("account", null))
+                return ret;
+            startRefresh();
         }
         else if (ACCOUNT_CHANGED.equals(intent.getAction())) {
             new Thread() {
@@ -228,7 +183,7 @@ public class VoicePlusService extends AccessibilityService {
             }.start();
         }
 
-        return START_STICKY;
+        return ret;
     }
 
     public static final String ACCOUNT_CHANGED = VoicePlusService.class.getPackage().getName() + ".ACCOUNT_CHANGED";
@@ -533,31 +488,6 @@ public class VoicePlusService extends AccessibilityService {
         .commit();
     }
 
-    // clear the google voice notification so the user doesn't get double notified.
-    Method cancelAllNotifications;
-    Object internalNotificationService;
-    int userId;
-    private void clearGoogleVoiceNotifications() {
-        try {
-            if (cancelAllNotifications == null) {
-                // run this to get the internal service to populate
-                NotificationManager nm = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
-                nm.cancelAll();
-
-                Field f = NotificationManager.class.getDeclaredField("sService");
-                f.setAccessible(true);
-                internalNotificationService = f.get(null);
-                cancelAllNotifications = internalNotificationService.getClass().getDeclaredMethod("cancelAllNotifications", String.class, int.class);
-                userId = (Integer)UserHandle.class.getDeclaredMethod("myUserId").invoke(null);
-            }
-            if (cancelAllNotifications != null)
-                cancelAllNotifications.invoke(internalNotificationService, Helper.GOOGLE_VOICE_PACKAGE, userId);
-        }
-        catch (Exception e) {
-            Log.e(LOGTAG, "Error clearing GoogleVoice notifications", e);
-        }
-    }
-
     void startRefresh() {
         needsRefresh = true;
 
@@ -587,23 +517,4 @@ public class VoicePlusService extends AccessibilityService {
 
     boolean needsRefresh;
     Thread refreshThread;
-    @Override
-    public void onAccessibilityEvent(AccessibilityEvent event) {
-        if (null == settings.getString("account", null))
-            return;
-
-        if (event.getEventType() != AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED)
-            return;
-
-        if (!Helper.GOOGLE_VOICE_PACKAGE.equals(event.getPackageName()))
-            return;
-
-        clearGoogleVoiceNotifications();
-
-        startRefresh();
-    }
-
-    @Override
-    public void onInterrupt() {
-    }
 }
