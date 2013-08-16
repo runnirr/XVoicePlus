@@ -444,8 +444,7 @@ public class VoicePlusService extends AccessibilityService {
         Log.i(LOGTAG, "Refreshing messages");
 
         // tokens!
-        Bundle bundle = AccountManager.get(this).getAuthToken(new Account(account, "com.google"), "grandcentral", true, null, null).getResult();
-        String authToken = bundle.getString(AccountManager.KEY_AUTHTOKEN);
+        String authToken = getAuthToken(account);
 
         Payload payload = Ion.with(this)
         .load("https://www.google.com/voice/request/messages")
