@@ -100,7 +100,8 @@ public class VoicePlusService extends Service {
     BroadcastReceiver mConnectivityReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            if (!needsRefresh)
+            // refresh inbox if connectivity returns
+            if (intent.getBooleanExtra(ConnectivityManager.EXTRA_NO_CONNECTIVITY, false))
                 return;
             ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
             NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
@@ -492,7 +493,7 @@ public class VoicePlusService extends Service {
         needsRefresh = true;
 
         // if a sync is in progress, dont start another
-        if (refreshThread != null && refreshThread.isAlive())
+        if (refreshThread != null && refreshThread.getState() != Thread.State.TERMINATED)
             return;
 
         refreshThread = new Thread() {
