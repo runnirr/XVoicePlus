@@ -387,6 +387,7 @@ public class VoicePlusService extends Service {
         values.put("body", text);
         values.put("type", type);
         values.put("date", date);
+        values.put("date_sent", date);
         values.put("read", 1);
         getContentResolver().insert(Uri.parse("content://sms/sent"), values);
     }
