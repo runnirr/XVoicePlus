@@ -29,7 +29,10 @@ import com.android.internal.telephony.ISms;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.annotations.SerializedName;
+import com.koushikdutta.async.http.libcore.RawHeaders;
+import com.koushikdutta.ion.HeadersCallback;
 import com.koushikdutta.ion.Ion;
+import com.koushikdutta.ion.Response;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
@@ -331,9 +334,18 @@ public class VoicePlusService extends Service {
     }
 
     // hit the google voice api to send a text
-    void sendRnrSe(String authToken, String rnrse, String number, String text) throws Exception {
+    void sendRnrSe(final String authToken, String rnrse, String number, String text) throws Exception {
         JsonObject json = Ion.with(this)
         .load("https://www.google.com/voice/sms/send/")
+        .onHeaders(new HeadersCallback() {
+            @Override
+            public void onHeaders(RawHeaders headers) {
+                if (headers.getResponseCode() == 401) {
+                    AccountManager.get(VoicePlusService.this).invalidateAuthToken("com.google", authToken);
+                    settings.edit().remove("_rnr_se").commit();
+                }
+            }
+        })
         .setHeader("Authorization", "GoogleLogin auth=" + authToken)
         .setBodyParameter("phoneNumber", number)
         .setBodyParameter("sendErrorSms", "0")
@@ -401,10 +413,20 @@ public class VoicePlusService extends Service {
         Log.i(LOGTAG, "Refreshing messages");
 
         // tokens!
-        String authToken = getAuthToken(account);
+        final String authToken = getAuthToken(account);
 
         Payload payload = Ion.with(this)
         .load("https://www.google.com/voice/request/messages")
+        .onHeaders(new HeadersCallback() {
+            @Override
+            public void onHeaders(RawHeaders headers) {
+                if (headers.getResponseCode() == 401) {
+                    Log.e(LOGTAG, "Refresh failed:\n" + headers.toHeaderString());
+                    AccountManager.get(VoicePlusService.this).invalidateAuthToken("com.google", authToken);
+                    settings.edit().remove("_rnr_se").commit();
+                }
+            }
+        })
         .setHeader("Authorization", "GoogleLogin auth=" + authToken)
         .as(Payload.class)
         .get();
@@ -491,32 +513,16 @@ public class VoicePlusService extends Service {
     }
 
     void startRefresh() {
-        needsRefresh = true;
-
-        // if a sync is in progress, dont start another
-        if (refreshThread != null && refreshThread.getState() != Thread.State.TERMINATED)
-            return;
-
-        refreshThread = new Thread() {
+        new Thread() {
             @Override
             public void run() {
-                while (needsRefresh) {
-                    try {
-                        needsRefresh = false;
-                        refreshMessages();
-                    }
-                    catch (Exception e) {
-                        needsRefresh = true;
-                        Log.e(LOGTAG, "Error refreshing messages", e);
-                        break;
-                    }
+                try {
+                    refreshMessages();
+                }
+                catch (Exception e) {
+                    Log.e(LOGTAG, "Error refreshing messages", e);
                 }
             }
-        };
-
-        refreshThread.start();
+        }.start();
     }
-
-    boolean needsRefresh;
-    Thread refreshThread;
 }
