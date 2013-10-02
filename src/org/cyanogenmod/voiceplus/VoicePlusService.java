@@ -145,7 +145,24 @@ public class VoicePlusService extends Service {
 
         onSendMultipartText(destAddr, scAddr, parts, sentIntents, deliveryIntents, multipart);
     }
+    boolean canDeliverToAddress(String address) {
+    	if (address == null)
+		return false;
+	if (address.startsWith("+") && !address.startsWith("+1"))
+		return false;
 
+	TelephonyManager tm = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);
+	String country = tm.getNetworkCountryIso();
+	if (country == null)
+		country = tm.getSimCountryIso();
+	if (country == null)
+		return address.startsWith("+1"); /* Should never be reached. */
+
+	if (!country.toUpperCase().equals("US") && !address.startsWith("+1"))
+		return false;
+
+	return true;
+    }
     @Override
     public int onStartCommand(final Intent intent, int flags, int startId) {
         int ret = super.onStartCommand(intent, flags, startId);
@@ -155,10 +172,21 @@ public class VoicePlusService extends Service {
             return ret;
         }
 
+	
+
         ensureEnabled();
 
         if (intent == null)
             return ret;
+
+        String destination = intent.getStringExtra("destAddr");
+	if (!canDeliverToAddress(destination)) {
+		if (destination == null)
+			destination = "(null)";
+		Log.d(LOGTAG, "Sending <" + destination + "> via cellular instead of gvoice.");
+		stopSelf();
+		return ret;
+	}
 
         // handle an outgoing sms on a background thread.
         if ("android.intent.action.NEW_OUTGOING_SMS".equals(intent.getAction())) {
