@@ -14,6 +14,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -421,7 +422,16 @@ public class VoicePlusService extends Service {
     // we do this in the case of outgoing messages
     // that were not sent via this phone, and also on initial
     // message sync.
-    void insertMessage(String number, String text, int type, long date) {
+    synchronized void insertMessage(String number, String text, int type, long date) {
+        Cursor c = getContentResolver().query(Uri.parse("content://sms/sent"), null, "date = ?",
+                    new String[] { String.valueOf(date) }, null);
+        try {
+            if (c.moveToNext())
+                return;
+        }
+        finally {
+            c.close();
+        }
         ContentValues values = new ContentValues();
         values.put("address", number);
         values.put("body", text);
