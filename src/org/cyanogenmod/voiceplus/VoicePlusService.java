@@ -418,12 +418,22 @@ public class VoicePlusService extends Service {
 
     private static final int PROVIDER_INCOMING_SMS = 1;
     private static final int PROVIDER_OUTGOING_SMS = 2;
+
+    private static final Uri URI_SENT = Uri.parse("content://sms/sent");
+    private static final Uri URI_RECEIVED = Uri.parse("content://sms/inbox");
+
     // insert a message into the sms/mms provider.
     // we do this in the case of outgoing messages
     // that were not sent via this phone, and also on initial
     // message sync.
     synchronized void insertMessage(String number, String text, int type, long date) {
-        Cursor c = getContentResolver().query(Uri.parse("content://sms/sent"), null, "date = ?",
+        Uri uri;
+        if (type == PROVIDER_INCOMING_SMS)
+            uri = URI_RECEIVED;
+        else
+            uri = URI_SENT;
+
+        Cursor c = getContentResolver().query(uri, null, "date = ?",
                     new String[] { String.valueOf(date) }, null);
         try {
             if (c.moveToNext())
@@ -439,7 +449,29 @@ public class VoicePlusService extends Service {
         values.put("date", date);
         values.put("date_sent", date);
         values.put("read", 1);
-        getContentResolver().insert(Uri.parse("content://sms/sent"), values);
+        getContentResolver().insert(uri, values);
+    }
+
+    synchronized void synthesizeMessage(String number, String message, long date) {
+        Cursor c = getContentResolver().query(URI_RECEIVED, null, "date = ?",
+                new String[] { String.valueOf(date) }, null);
+        try {
+            if (c.moveToNext())
+                return;
+        }
+        finally {
+            c.close();
+        }
+
+        ArrayList<String> list = new ArrayList<String>();
+        list.add(message);
+        try {
+            // synthesize a BROADCAST_SMS event
+            smsTransport.synthesizeMessages(number, null, list, date);
+        }
+        catch (Exception e) {
+            Log.e(LOGTAG, "Error synthesizing SMS messages", e);
+        }
     }
 
     // refresh the messages that were on the server
@@ -535,15 +567,7 @@ public class VoicePlusService extends Service {
 
             if (message.type != VOICE_INCOMING_SMS)
                 continue;
-            ArrayList<String> list = new ArrayList<String>();
-            list.add(message.message);
-            try {
-                // synthesize a BROADCAST_SMS event
-                smsTransport.synthesizeMessages(message.phoneNumber, null, list, message.date);
-            }
-            catch (Exception e) {
-                Log.e(LOGTAG, "Error synthesizing SMS messages", e);
-            }
+            synthesizeMessage(message.phoneNumber, message.message, message.date);
         }
         settings.edit()
         .putLong("timestamp", max)
