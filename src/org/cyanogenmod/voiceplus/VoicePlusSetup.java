@@ -88,7 +88,7 @@ public class VoicePlusSetup extends Activity {
                 }.start();
 
                 if (account == NULL) {
-                    settings.edit().remove("account").remove("rnrse").commit();
+                    settings.edit().remove("account").remove("_rnr_se").commit();
                     return;
                 }
 
