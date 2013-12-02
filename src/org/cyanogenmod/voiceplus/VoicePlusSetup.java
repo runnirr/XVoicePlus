@@ -58,7 +58,6 @@ public class VoicePlusSetup extends Activity {
         final String[] permissions = new String[] {
             Manifest.permission.BROADCAST_SMS,
             Manifest.permission.WRITE_SECURE_SETTINGS,
-            "android.permission.CANCEL_NOTIFICATIONS",
             "android.permission.INTERCEPT_SMS",
         };
         boolean ok = true;
