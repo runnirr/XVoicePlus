@@ -1,5 +1,7 @@
 package org.cyanogenmod.voiceplus;
 
+import com.runnirr.xvoiceplus.R;
+
 import android.Manifest;
 import android.accounts.Account;
 import android.accounts.AccountManager;

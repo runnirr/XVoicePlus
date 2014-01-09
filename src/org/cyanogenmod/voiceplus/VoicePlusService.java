@@ -68,8 +68,8 @@ public class VoicePlusService extends Service {
         }
     };
     
-    BroadcastReceiver mOutgoingSmsReceiver;// = new OutgoingSmsReceiver();
-    BroadcastReceiver mVoiceListenerReceiver;// = new VoiceListenerService();
+    BroadcastReceiver mOutgoingSmsReceiver;
+    BroadcastReceiver mVoiceListenerReceiver;
 
    @Override
     public void onDestroy() {
