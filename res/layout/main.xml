@@ -6,7 +6,6 @@
               android:layout_marginLeft="12dp"
               android:layout_marginRight="12dp">
 
-
     <TextView
             android:gravity="center"
             android:paddingTop="16dp"
@@ -23,28 +22,6 @@
             android:layout_marginBottom="12dp"
             android:background="@android:color/holo_blue_dark"/>
 
-    <LinearLayout
-            android:id="@+id/status_container"
-            android:orientation="vertical"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-        <TextView
-                android:textColor="@android:color/holo_red_light"
-                android:id="@+id/status"
-                android:gravity="center"
-                android:paddingBottom="16dp"
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                style="@android:style/TextAppearance.Small"/>
-
-        <View
-                android:layout_width="fill_parent"
-                android:layout_height="1dp"
-                android:layout_marginTop="8dp"
-                android:layout_marginBottom="12dp"
-                android:background="@android:color/holo_blue_dark"/>
-    </LinearLayout>
 
     <TextView
             android:layout_width="fill_parent"

@@ -3,10 +3,8 @@
       package="org.cyanogenmod.voiceplus"
       android:versionCode="1"
       android:versionName="1.0">
-    <uses-sdk android:minSdkVersion="18" android:targetSdkVersion="18" />
+    <uses-sdk android:minSdkVersion="15" android:targetSdkVersion="19" />
 
-
-    <uses-permission android:name="android.permission.SEND_SMS" />
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
     <uses-permission android:name="android.permission.READ_SMS" />
     <uses-permission android:name="android.permission.WRITE_SMS" />
@@ -15,22 +13,24 @@
     <uses-permission android:name="android.permission.MANAGE_ACCOUNTS" />
     <uses-permission android:name="android.permission.USE_CREDENTIALS" />
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
-    <uses-permission android:name="android.permission.INTERCEPT_SMS" />
     <uses-permission android:name="android.permission.BROADCAST_SMS" />
     <uses-permission android:name="android.permission.WRITE_SETTINGS" />
-    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
-    <uses-permission android:name="android.permission.CANCEL_NOTIFICATIONS" />
-
-    <uses-permission android:name="android.permission.ACCESS_NOTIFICATIONS" />
 
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
-    <application android:label="@string/app_name" android:icon="@drawable/ic_launcher">
-        <activity android:name=".VoicePlusSetup"
+    <application
+        android:allowBackup="true"
+        android:label="@string/app_name"
+        android:icon="@drawable/ic_launcher">
+
+        <meta-data android:value="true" android:name="xposedmodule"/>
+        <meta-data android:value="2.0*" android:name="xposedminversion"/>
+        <meta-data android:value="Voice+ for Xposed Framework" android:name="xposeddescription"/>        
+
+        <activity android:name="org.cyanogenmod.voiceplus.VoicePlusSetup"
                   android:label="@string/app_name">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -39,21 +39,11 @@
         </activity>
 
         <service android:name=".VoicePlusService" />
+        
+        <receiver android:name="org.cyanogenmod.voiceplus.OutgoingSmsReceiver" />
+        <receiver android:name="org.cyanogenmod.voiceplus.VoiceListenerService" />
 
-        <service android:name=".VoiceListenerService"
-                 android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
-            <intent-filter>
-                <action android:name="android.service.notification.NotificationListenerService" />
-            </intent-filter>
-        </service>
-
-        <receiver android:name=".OutgoingSmsReceiver">
-            <intent-filter android:priority="10">
-                <action android:name="android.intent.action.NEW_OUTGOING_SMS" />
-            </intent-filter>
-        </receiver>
-
-        <receiver android:name=".PackageChangeReceiver">
+        <receiver android:name="org.cyanogenmod.voiceplus.PackageChangeReceiver">
             <intent-filter>
                 <data android:scheme="package"/>
                 <action android:name="android.intent.action.PACKAGE_ADDED" />

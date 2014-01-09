@@ -12,6 +12,9 @@ import android.util.Log;
  */
 public class OutgoingSmsReceiver extends BroadcastReceiver {
     private static final String LOGTAG = "OutgoingSmsReceiver";
+    
+    public static final String NEW_OUTGOING_SMS = "com.runnnirr.xvoiceplus.NEW_OUTGOING_SMS";
+	
 
     private boolean canDeliverToAddress(Context context, Intent intent) {
         String address = intent.getStringExtra("destAddr");
@@ -26,7 +29,7 @@ public class OutgoingSmsReceiver extends BroadcastReceiver {
         if (country == null)
             country = tm.getSimCountryIso();
         if (country == null)
-            return address.startsWith("+1"); /* Should never be reached. */
+            return address.startsWith("+1") || address.length() <= 10; /* Should never be reached. */
 
         if (!country.toUpperCase().equals("US") && !address.startsWith("+1"))
             return false;

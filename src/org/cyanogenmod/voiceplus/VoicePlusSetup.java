@@ -53,24 +53,6 @@ public class VoicePlusSetup extends Activity {
         accountAdapter = new AccountAdapter();
         settings = getSharedPreferences("settings", MODE_PRIVATE);
 
-        LinearLayout statusContainer = (LinearLayout)findViewById(R.id.status_container);
-        TextView status = (TextView)findViewById(R.id.status);
-        final String[] permissions = new String[] {
-            Manifest.permission.BROADCAST_SMS,
-            Manifest.permission.WRITE_SECURE_SETTINGS,
-            "android.permission.CANCEL_NOTIFICATIONS",
-            "android.permission.INTERCEPT_SMS",
-        };
-        boolean ok = true;
-        for (String permission: permissions) {
-            if (checkCallingOrSelfPermission(permission) == PackageManager.PERMISSION_DENIED) {
-                status.setText(getString(R.string.not_granted, permission));
-                ok = false;
-            }
-        }
-        if (ok)
-            statusContainer.setVisibility(View.GONE);
-
         lv = (ListView) findViewById(R.id.list);
         lv.setAdapter(accountAdapter = new AccountAdapter());
 

@@ -8,7 +8,6 @@ import android.app.Activity;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
@@ -20,23 +19,20 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.provider.Settings;
 import android.telephony.PhoneNumberUtils;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.android.internal.telephony.ISms;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.annotations.SerializedName;
 import com.koushikdutta.async.http.libcore.RawHeaders;
 import com.koushikdutta.ion.HeadersCallback;
 import com.koushikdutta.ion.Ion;
-import com.koushikdutta.ion.Response;
+import com.runnirr.xvoiceplus.SmsUtils;
 
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -52,53 +48,11 @@ public class VoicePlusService extends Service {
     public static final String ACTION_INCOMING_VOICE = VoicePlusService.class.getPackage().getName() + ".INCOMING_VOICE";
     private static final String LOGTAG = "VoicePlusService";
 
-    private ISms smsTransport;
     private SharedPreferences settings;
 
     @Override
     public IBinder onBind(Intent intent) {
         return null;
-    }
-
-    // ensure that this notification listener is enabled.
-    // the service watches for google voice notifications to know when to check for new
-    // messages.
-    final String ENABLED_NOTIFICATION_LISTENERS = "enabled_notification_listeners"; //Settings.Secure.ENABLED_NOTIFICATION_LISTENERS
-    private void ensureEnabled() {
-        ComponentName me = new ComponentName(this, VoiceListenerService.class);
-        String meFlattened = me.flattenToString();
-
-        String existingListeners = Settings.Secure.getString(getContentResolver(),
-                ENABLED_NOTIFICATION_LISTENERS);
-
-        if (!TextUtils.isEmpty(existingListeners)) {
-            if (existingListeners.contains(meFlattened)) {
-                return;
-            } else {
-                existingListeners += ":" + meFlattened;
-            }
-        } else {
-            existingListeners = meFlattened;
-        }
-
-        Settings.Secure.putString(getContentResolver(),
-        ENABLED_NOTIFICATION_LISTENERS,
-        existingListeners);
-    }
-
-    // hook into sms manager to be able to synthesize SMS events.
-    // new messages from google voice get mocked out as real SMS events in Android.
-    private void registerSmsMiddleware() {
-        try {
-            if (smsTransport != null)
-                return;
-            Class sm = Class.forName("android.os.ServiceManager");
-            Method getService = sm.getMethod("getService", String.class);
-            smsTransport = ISms.Stub.asInterface((IBinder)getService.invoke(null, "isms"));
-        }
-        catch (Exception e) {
-            Log.e(LOGTAG, "register error", e);
-        }
     }
 
     BroadcastReceiver mConnectivityReceiver = new BroadcastReceiver() {
@@ -113,11 +67,19 @@ public class VoicePlusService extends Service {
                 startRefresh();
         }
     };
+    
+    BroadcastReceiver mOutgoingSmsReceiver;// = new OutgoingSmsReceiver();
+    BroadcastReceiver mVoiceListenerReceiver;// = new VoiceListenerService();
 
    @Override
     public void onDestroy() {
         super.onDestroy();
         unregisterReceiver(mConnectivityReceiver);
+        unregisterReceiver(mOutgoingSmsReceiver);
+        unregisterReceiver(mVoiceListenerReceiver);
+        
+        mOutgoingSmsReceiver = null;
+        mVoiceListenerReceiver = null;
     }
 
     @Override
@@ -125,11 +87,18 @@ public class VoicePlusService extends Service {
         super.onCreate();
 
         settings = getSharedPreferences("settings", MODE_PRIVATE);
-
-        registerSmsMiddleware();
+        
+        mOutgoingSmsReceiver = new OutgoingSmsReceiver();
+        mVoiceListenerReceiver = new VoiceListenerService();
 
         IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
         registerReceiver(mConnectivityReceiver, filter);
+        
+        IntentFilter outgoingSmsFilter = new IntentFilter(OutgoingSmsReceiver.NEW_OUTGOING_SMS);
+        registerReceiver(mOutgoingSmsReceiver, outgoingSmsFilter);
+        
+        IntentFilter incomingVoiceFilter = new IntentFilter(ACTION_INCOMING_VOICE);
+        registerReceiver(mVoiceListenerReceiver, incomingVoiceFilter);
 
         startRefresh();
     }
@@ -156,13 +125,11 @@ public class VoicePlusService extends Service {
             return ret;
         }
 
-        ensureEnabled();
-
         if (intent == null)
             return ret;
 
         // handle an outgoing sms on a background thread.
-        if ("android.intent.action.NEW_OUTGOING_SMS".equals(intent.getAction())) {
+        if (OutgoingSmsReceiver.NEW_OUTGOING_SMS.equals(intent.getAction())) {
             new Thread() {
                 @Override
                 public void run() {
@@ -437,12 +404,10 @@ public class VoicePlusService extends Service {
 
         ArrayList<String> list = new ArrayList<String>();
         list.add(message);
-        try {
-            // synthesize a BROADCAST_SMS event
-            smsTransport.synthesizeMessages(number, null, list, date);
-        }
-        catch (Exception e) {
-            Log.e(LOGTAG, "Error synthesizing SMS messages", e);
+        try{
+        	SmsUtils.createFakeSms(this, number, message, date);
+        } catch (IOException e){
+        	Log.e(LOGTAG, "IOException when creating fake sms, ignoring");
         }
     }
 
@@ -490,10 +455,6 @@ public class VoicePlusService extends Service {
                 return -1;
             }
         });
-
-        registerSmsMiddleware();
-        if (smsTransport == null)
-            throw new Exception("SMS transport unavailable");
 
         long timestamp = settings.getLong("timestamp", 0);
         boolean first = timestamp == 0;
