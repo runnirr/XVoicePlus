@@ -18,7 +18,6 @@ import org.cyanogenmod.voiceplus.OutgoingSmsReceiver;
 import org.cyanogenmod.voiceplus.VoicePlusService;
 
 import android.app.AndroidAppHelper;
-import android.app.Application;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;

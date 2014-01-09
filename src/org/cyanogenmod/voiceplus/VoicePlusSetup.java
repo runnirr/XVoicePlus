@@ -2,7 +2,6 @@ package org.cyanogenmod.voiceplus;
 
 import com.runnirr.xvoiceplus.R;
 
-import android.Manifest;
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.accounts.AccountManagerCallback;
@@ -10,7 +9,6 @@ import android.accounts.AccountManagerFuture;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -19,9 +17,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.CheckedTextView;
-import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.TextView;
 
 public class VoicePlusSetup extends Activity {
     class AccountAdapter extends ArrayAdapter<Account> {
