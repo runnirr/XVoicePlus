@@ -38,7 +38,7 @@
             </intent-filter>
         </activity>
 
-        <service android:name=".VoicePlusService" />
+        <service android:name="org.cyanogenmod.voiceplus.VoicePlusService" />
         
         <receiver android:name="org.cyanogenmod.voiceplus.OutgoingSmsReceiver" />
         <receiver android:name="org.cyanogenmod.voiceplus.VoiceListenerService" />
