@@ -229,7 +229,7 @@ public class VoicePlusService extends Service {
 
         settings.edit()
         .putString("_rnr_se", rnrse)
-        .commit();
+        .apply();
     }
 
     // mark an outgoing text as recently sent, so if it comes in via
@@ -310,7 +310,7 @@ public class VoicePlusService extends Service {
             public void onHeaders(RawHeaders headers) {
                 if (headers.getResponseCode() == 401) {
                     AccountManager.get(VoicePlusService.this).invalidateAuthToken("com.google", authToken);
-                    settings.edit().remove("_rnr_se").commit();
+                    settings.edit().remove("_rnr_se").apply();
                 }
             }
         })
@@ -350,6 +350,15 @@ public class VoicePlusService extends Service {
         // 11 is outgoing
         @SerializedName("type")
         int type;
+        
+        @SerializedName("id")
+        String id;
+        
+        @SerializedName("conversationId")
+        String conversationId;
+        
+        @SerializedName("isRead")
+        int read;
     }
 
     private static final int VOICE_INCOMING_SMS = 10;
@@ -365,15 +374,21 @@ public class VoicePlusService extends Service {
     // we do this in the case of outgoing messages
     // that were not sent via this phone, and also on initial
     // message sync.
-    synchronized void insertMessage(String number, String text, int type, long date) {
+    synchronized void insertMessage(Message m) {
         Uri uri;
-        if (type == PROVIDER_INCOMING_SMS)
+        int type;
+        if (m.type == VOICE_INCOMING_SMS) {
             uri = URI_RECEIVED;
-        else
+            type = PROVIDER_INCOMING_SMS;
+        } else if (m.type == VOICE_OUTGOING_SMS) {
             uri = URI_SENT;
-
-        Cursor c = getContentResolver().query(uri, null, "date = ?",
-                    new String[] { String.valueOf(date) }, null);
+            type = PROVIDER_OUTGOING_SMS;
+        } else {
+        	return;
+        }
+        
+        Cursor c = getContentResolver().query(uri, null, "date = ? AND body = ?",
+                    new String[] { String.valueOf(m.date), m.message }, null);
         try {
             if (c.moveToNext())
                 return;
@@ -382,12 +397,12 @@ public class VoicePlusService extends Service {
             c.close();
         }
         ContentValues values = new ContentValues();
-        values.put("address", number);
-        values.put("body", text);
+        values.put("address", m.phoneNumber);
+        values.put("body", m.message);
         values.put("type", type);
-        values.put("date", date);
-        values.put("date_sent", date);
-        values.put("read", 1);
+        values.put("date", m.date);
+        values.put("date_sent", m.date);
+        values.put("read", m.read);
         getContentResolver().insert(uri, values);
     }
 
@@ -402,8 +417,6 @@ public class VoicePlusService extends Service {
             c.close();
         }
 
-        ArrayList<String> list = new ArrayList<String>();
-        list.add(message);
         try{
         	SmsUtils.createFakeSms(this, number, message, date);
         } catch (IOException e){
@@ -430,7 +443,7 @@ public class VoicePlusService extends Service {
                 if (headers.getResponseCode() == 401) {
                     Log.e(LOGTAG, "Refresh failed:\n" + headers.toHeaderString());
                     AccountManager.get(VoicePlusService.this).invalidateAuthToken("com.google", authToken);
-                    settings.edit().remove("_rnr_se").commit();
+                    settings.edit().remove("_rnr_se").apply();
                 }
             }
         })
@@ -440,19 +453,14 @@ public class VoicePlusService extends Service {
 
         ArrayList<Message> all = new ArrayList<Message>();
         for (Conversation conversation: payload.conversations) {
-            for (Message message: conversation.messages)
-                all.add(message);
+            all.addAll(conversation.messages);
         }
 
         // sort by date order so the events get added in the same order
         Collections.sort(all, new Comparator<Message>() {
             @Override
             public int compare(Message lhs, Message rhs) {
-                if (lhs.date == rhs.date)
-                    return 0;
-                if (lhs.date > rhs.date)
-                    return 1;
-                return -1;
+            	return Long.valueOf(lhs.date).compareTo(rhs.date);
             }
         });
 
@@ -471,30 +479,18 @@ public class VoicePlusService extends Service {
             // on first sync, just populate the mms provider...
             // don't send any broadcasts.
             if (first) {
-                int type;
-                if (message.type == VOICE_INCOMING_SMS)
-                    type = PROVIDER_INCOMING_SMS;
-                else if (message.type == VOICE_OUTGOING_SMS)
-                    type = PROVIDER_OUTGOING_SMS;
-                else
-                    continue;
-                // just populate the content provider and go
-                insertMessage(message.phoneNumber, message.message, type, message.date);
+                insertMessage(message);
                 continue;
             }
 
             // sync up outgoing messages
             if (message.type == VOICE_OUTGOING_SMS) {
-                boolean found = false;
-                for (String recent: recentSent) {
-                    if (TextUtils.equals(recent, message.message)) {
-                        recentSent.remove(message.message);
-                        found = true;
-                        break;
-                    }
+                boolean found = recentSent.contains(message.message);
+                if (found) {
+                	recentSent.remove(message.message);
+                } else {
+                    insertMessage(message);
                 }
-                if (!found)
-                    insertMessage(message.phoneNumber, message.message, PROVIDER_OUTGOING_SMS, message.date);
                 continue;
             }
 
@@ -504,7 +500,7 @@ public class VoicePlusService extends Service {
         }
         settings.edit()
         .putLong("timestamp", max)
-        .commit();
+        .apply();
     }
 
     void startRefresh() {
