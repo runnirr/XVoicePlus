@@ -154,7 +154,6 @@ public class VoicePlusService extends Service {
                 }
             }.start();
         }
-
         return ret;
     }
 
@@ -326,6 +325,26 @@ public class VoicePlusService extends Service {
             throw new Exception(json.toString());
     }
 
+    void markRnrSe(final String authToken, String rnrse, String id, int read) throws Exception {
+    	// id - GV messages id
+    	// read - 0 = unread, 1 = read
+        Ion.with(this)
+        .load("https://www.google.com/voice/inbox/mark/")
+        .onHeaders(new HeadersCallback() {
+            @Override
+            public void onHeaders(RawHeaders headers) {
+                if (headers.getResponseCode() == 401) {
+                    AccountManager.get(VoicePlusService.this).invalidateAuthToken("com.google", authToken);
+                    settings.edit().remove("_rnr_se").commit();
+                }
+            }
+        })
+        .setHeader("Authorization", "GoogleLogin auth=" + authToken)
+        .setBodyParameter("messages", id)
+        .setBodyParameter("read", String.valueOf(read))
+        .setBodyParameter("_rnr_se", rnrse);
+    }
+
     public static class Payload {
         @SerializedName("messageList")
         public ArrayList<Conversation> conversations = new ArrayList<Conversation>();
@@ -491,12 +510,46 @@ public class VoicePlusService extends Service {
             } else if (message.type == VOICE_INCOMING_SMS) {
             	synthesizeMessage(message);
             }
+            
+            markReadIfNeeded(message);
+            
         }
         settings.edit()
         .putLong("timestamp", max)
         .apply();
     }
 
+    private void markReadIfNeeded(Message message){
+    	if (message.read == 0){
+    		Uri uri;
+    		if (message.type == VOICE_INCOMING_SMS) {
+    			uri = URI_RECEIVED;
+    		} else if (message.type == VOICE_OUTGOING_SMS) {
+    			uri = URI_SENT;
+    		} else {
+    			return;
+    		}
+    		
+    		Cursor c = getContentResolver().query(uri, null, "date = ? AND body = ?",
+        			new String[] { String.valueOf(message.date), message.message }, null);
+    		try {
+	    		final String authToken = getAuthToken(settings.getString("account", null));
+	    		String rnrse = settings.getString("_rnr_se", null);
+	    		if (rnrse == null) {
+	    			fetchRnrSe(authToken);
+	    			rnrse = settings.getString("_rnr_se", null);
+	    		}
+	    		if(c.moveToFirst()){
+	    			markRnrSe(authToken, rnrse, message.id, message.read);
+	    		}
+    		} catch (Exception e) {
+    			Log.w(LOGTAG, "Error marking message as read. ID: " + message.id);
+    		} finally {
+    			c.close();
+    		}
+    	}
+    }
+    
     void startRefresh() {
         new Thread() {
             @Override
