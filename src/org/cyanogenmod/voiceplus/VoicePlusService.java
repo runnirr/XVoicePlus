@@ -241,7 +241,7 @@ public class VoicePlusService extends Service {
     }
 
     public String getAuthToken(String account) throws IOException, OperationCanceledException, AuthenticatorException {
-        Bundle bundle = AccountManager.get(this).getAuthToken(new Account(account, "com.google"), "grandcentral", true, null, null).getResult();
+        Bundle bundle = AccountManager.get(this).getAuthToken(new Account(account, "com.google"), "grandcentral", null, true, null, null).getResult();
         return bundle.getString(AccountManager.KEY_AUTHTOKEN);
     }
 

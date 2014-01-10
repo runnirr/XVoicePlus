@@ -101,7 +101,7 @@ public class VoicePlusSetup extends Activity {
 
         try {
             // grab the auth token
-            Bundle bundle = AccountManager.get(this).getAuthToken(new Account(account, "com.google"), "grandcentral", true, null, null).getResult();
+            Bundle bundle = AccountManager.get(this).getAuthToken(new Account(account, "com.google"), "grandcentral", null, true, null, null).getResult();
             String authToken = bundle.getString(AccountManager.KEY_AUTHTOKEN);
             AccountManager.get(this).invalidateAuthToken("com.google", authToken);
             Log.i(LOGTAG, "Token invalidated.");
@@ -121,8 +121,6 @@ public class VoicePlusSetup extends Activity {
             @Override
             public void run(AccountManagerFuture<Bundle> future) {
                 try {
-                    Bundle bundle = future.getResult();
-                    final String authToken = bundle.getString(AccountManager.KEY_AUTHTOKEN);
                     settings.edit()
                     .putString("account", account.name)
                     .commit();
