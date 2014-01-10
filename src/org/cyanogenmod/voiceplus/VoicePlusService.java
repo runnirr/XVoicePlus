@@ -165,12 +165,12 @@ public class VoicePlusService extends Service {
         if (sentIntents == null)
             return;
         for (PendingIntent si: sentIntents) {
-            if (si == null)
-                continue;
-            try {
-                si.send();
-            }
-            catch (Exception e) {
+            if (si != null){
+	            try {
+	                si.send();
+	            }
+	            catch (Exception e) {
+	            }
             }
         }
     }
@@ -180,12 +180,12 @@ public class VoicePlusService extends Service {
         if (sentIntents == null)
             return;
         for (PendingIntent si: sentIntents) {
-            if (si == null)
-                continue;
-            try {
-                si.send(Activity.RESULT_OK);
-            }
-            catch (Exception e) {
+            if (si != null) {
+	            try {
+	                si.send(Activity.RESULT_OK);
+	            }
+	            catch (Exception e) {
+	            }
             }
         }
     }
@@ -491,12 +491,9 @@ public class VoicePlusService extends Service {
                 } else {
                     insertMessage(message);
                 }
-                continue;
+            } else if (message.type == VOICE_INCOMING_SMS) {
+            	synthesizeMessage(message.phoneNumber, message.message, message.date);
             }
-
-            if (message.type != VOICE_INCOMING_SMS)
-                continue;
-            synthesizeMessage(message.phoneNumber, message.message, message.date);
         }
         settings.edit()
         .putLong("timestamp", max)
