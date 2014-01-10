@@ -21,7 +21,6 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.telephony.PhoneNumberUtils;
 import android.telephony.TelephonyManager;
-import android.text.TextUtils;
 import android.util.Log;
 
 import com.google.gson.JsonElement;
@@ -113,6 +112,7 @@ public class VoicePlusService extends Service {
         ArrayList<PendingIntent> sentIntents = intent.getParcelableArrayListExtra("sentIntents");
         ArrayList<PendingIntent> deliveryIntents = intent.getParcelableArrayListExtra("deliveryIntents");
 
+        startRefresh();
         onSendMultipartText(destAddr, scAddr, parts, sentIntents, deliveryIntents, multipart);
     }
 
@@ -369,6 +369,18 @@ public class VoicePlusService extends Service {
 
     private static final Uri URI_SENT = Uri.parse("content://sms/sent");
     private static final Uri URI_RECEIVED = Uri.parse("content://sms/inbox");
+    
+    synchronized boolean messageExists(Message m, Uri uri) {
+    	Cursor c = getContentResolver().query(uri, null, "date = ? AND body = ?",
+    			new String[] { String.valueOf(m.date), m.message }, null);
+	    try {
+	        return c.moveToFirst();
+	    }
+	    finally {
+	        c.close();
+	    }
+    	
+    }
 
     // insert a message into the sms/mms provider.
     // we do this in the case of outgoing messages
@@ -387,40 +399,25 @@ public class VoicePlusService extends Service {
         	return;
         }
         
-        Cursor c = getContentResolver().query(uri, null, "date = ? AND body = ?",
-                    new String[] { String.valueOf(m.date), m.message }, null);
-        try {
-            if (c.moveToNext())
-                return;
+        if (!messageExists(m, uri)) {
+	        ContentValues values = new ContentValues();
+	        values.put("address", m.phoneNumber);
+	        values.put("body", m.message);
+	        values.put("type", type);
+	        values.put("date", m.date);
+	        values.put("date_sent", m.date);
+	        values.put("read", m.read);
+	        getContentResolver().insert(uri, values);
         }
-        finally {
-            c.close();
-        }
-        ContentValues values = new ContentValues();
-        values.put("address", m.phoneNumber);
-        values.put("body", m.message);
-        values.put("type", type);
-        values.put("date", m.date);
-        values.put("date_sent", m.date);
-        values.put("read", m.read);
-        getContentResolver().insert(uri, values);
     }
 
-    synchronized void synthesizeMessage(String number, String message, long date) {
-        Cursor c = getContentResolver().query(URI_RECEIVED, null, "date = ?",
-                new String[] { String.valueOf(date) }, null);
-        try {
-            if (c.moveToNext())
-                return;
-        }
-        finally {
-            c.close();
-        }
-
-        try{
-        	SmsUtils.createFakeSms(this, number, message, date);
-        } catch (IOException e){
-        	Log.e(LOGTAG, "IOException when creating fake sms, ignoring");
+    synchronized void synthesizeMessage(Message m) {
+        if (!messageExists(m, URI_RECEIVED)){
+	        try{
+	        	SmsUtils.createFakeSms(this, m.phoneNumber, m.message, m.date);
+	        } catch (IOException e){
+	        	Log.e(LOGTAG, "IOException when creating fake sms, ignoring");
+	        }
         }
     }
 
@@ -492,7 +489,7 @@ public class VoicePlusService extends Service {
                     insertMessage(message);
                 }
             } else if (message.type == VOICE_INCOMING_SMS) {
-            	synthesizeMessage(message.phoneNumber, message.message, message.date);
+            	synthesizeMessage(message);
             }
         }
         settings.edit()
