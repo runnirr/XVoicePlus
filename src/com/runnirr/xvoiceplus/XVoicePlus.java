@@ -24,6 +24,7 @@ import android.app.AppOpsManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.XResources;
 import android.os.Build;
 import android.telephony.SmsMessage;
 import android.util.Log;
@@ -67,6 +68,8 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
 
     @Override
     public void initZygote(StartupParam startupParam) {
+        XResources.setSystemWideReplacement("android", "bool", "config_sms_capable", true);
+
         hookSendSms();
         hookXVoicePlusPermission();
         hookSmsMessage();
