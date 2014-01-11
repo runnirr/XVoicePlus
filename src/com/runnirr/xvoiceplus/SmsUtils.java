@@ -14,7 +14,9 @@ import android.util.Log;
 
 public class SmsUtils {
 	private static final String TAG = "SmsUtils";
+	
 	public static final String FORMAT_3GPP = "3gpp";
+	public static final int OP_WRITE_SMS = 15;
 	
 	public static void createFakeSms(Context context, String sender, String body, long date) throws IOException {
 	    byte[] pdu = null;

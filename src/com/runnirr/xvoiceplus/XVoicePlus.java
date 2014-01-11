@@ -7,6 +7,7 @@ import static de.robv.android.xposed.XposedHelpers.getObjectField;
 import static de.robv.android.xposed.XposedHelpers.callMethod;
 import static de.robv.android.xposed.XposedHelpers.callStaticMethod;
 import static de.robv.android.xposed.XposedHelpers.getStaticObjectField;
+import static de.robv.android.xposed.XposedHelpers.setIntField;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -17,21 +18,27 @@ import org.cyanogenmod.voiceplus.Helper;
 import org.cyanogenmod.voiceplus.OutgoingSmsReceiver;
 import org.cyanogenmod.voiceplus.VoicePlusService;
 
+import android.annotation.TargetApi;
 import android.app.AndroidAppHelper;
+import android.app.AppOpsManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.util.Log;
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.IXposedHookZygoteInit;
 import de.robv.android.xposed.XC_MethodHook;
+import de.robv.android.xposed.XposedBridge;
+import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;
 
 public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit {
 	private static final String TAG = "XVoicePlus";
 	
+	private static final String XVOICE_PLUS_PACKAGE = "com.runnirr.xvoiceplus";
 	private static final String PERM_BROADCAST_SMS = "android.permission.BROADCAST_SMS";
-	
+
 	private boolean HOOKED_GV = false;
 
 	@Override
@@ -40,7 +47,7 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
 			hookGoogleVoice(lpparam);
 		}
 	}
-	
+
 	private void hookGoogleVoice(LoadPackageParam lpparam) {
 		if (!HOOKED_GV){
 			findAndHookMethod(Helper.GOOGLE_VOICE_PACKAGE + ".PushNotificationReceiver", lpparam.classLoader,
@@ -63,6 +70,28 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
 		hookSendSms();
 		hookXVoicePlusPermission();
 		hookSmsMessage();
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT){
+			hookAppOps();
+		}
+	}
+	
+	@TargetApi(19)
+	private void hookAppOps() {
+		Log.d(TAG, "Hooking app ops");
+	
+		XposedBridge.hookAllConstructors(findClass("com.android.server.AppOpsService.Op", null),
+				new XC_MethodHook() {
+
+			@Override
+			protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+				if(XVOICE_PLUS_PACKAGE.equals((String) param.args[1]) && 
+						(Integer) param.args[2] == SmsUtils.OP_WRITE_SMS) {
+
+					setIntField(param.thisObject, "mode", AppOpsManager.MODE_ALLOWED);
+				}
+			}
+		
+		});
 	}
 	
 	private void hookSmsMessage(){
@@ -89,7 +118,7 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
             protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                 final String pkgName = (String) getObjectField(param.args[0], "packageName");
 
-                if ("com.runnirr.xvoiceplus".equals(pkgName) || "org.cyanogenmod.voiceplus".equals(pkgName)) {
+                if (XVOICE_PLUS_PACKAGE.equals(pkgName) || "org.cyanogenmod.voiceplus".equals(pkgName)) {
                 	final Object extras = getObjectField(param.args[0], "mExtras");
                     final HashSet<String> grantedPerms = 
                             (HashSet<String>) getObjectField(extras, "grantedPermissions");
@@ -106,7 +135,6 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
                         gpGids = (int[]) callStaticMethod(param.thisObject.getClass(), 
                                 "appendInts", gpGids, bpGids);
                     }
-                    
                 }
             }
         });
