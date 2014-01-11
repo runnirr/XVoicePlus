@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
       package="com.runnirr.xvoiceplus"
-      android:versionCode="1"
-      android:versionName="1.0">
+      android:versionCode="2"
+      android:versionName="1.1">
     <uses-sdk android:minSdkVersion="15" android:targetSdkVersion="19" />
 
-    <uses-permission android:name="android.permission.RECEIVE_SMS" />
     <uses-permission android:name="android.permission.READ_SMS" />
     <uses-permission android:name="android.permission.WRITE_SMS" />
 
