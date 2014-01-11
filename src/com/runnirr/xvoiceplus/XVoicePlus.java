@@ -25,12 +25,12 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
+import android.telephony.SmsMessage;
 import android.util.Log;
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.IXposedHookZygoteInit;
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;
 
 public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit {
@@ -95,13 +95,14 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
     }
 
     private void hookSmsMessage(){
-        findAndHookMethod(android.telephony.SmsMessage.class, "createFromPdu", byte[].class, String.class, new XC_MethodHook() {
+        findAndHookMethod(android.telephony.SmsMessage.class, "createFromPdu", byte[].class, new XC_MethodHook() {
+
             @Override
-            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                if(!param.args[1].equals(SmsUtils.FORMAT_3GPP)){
-                    // Set to 3GPP format (GSM) since that is the format of the generated sms
-                    // This likely breaks any incoming sms in CDMA format
-                    param.args[1] = SmsUtils.FORMAT_3GPP;
+            protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                if(param.getThrowable() != null) {
+                    param.setThrowable(null);
+                    SmsMessage result = (SmsMessage) callStaticMethod(SmsMessage.class, "createFromPdu", param.args[0], SmsUtils.FORMAT_3GPP);
+                    param.setResult(result);
                 }
             }
         });

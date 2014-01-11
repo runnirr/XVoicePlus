@@ -1,5 +1,7 @@
 package org.cyanogenmod.voiceplus;
 
+import java.util.Locale;
+
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -31,7 +33,7 @@ public class OutgoingSmsReceiver extends BroadcastReceiver {
         if (country == null)
             return address.startsWith("+1") || address.length() <= 10; /* Should never be reached. */
 
-        if (!country.toUpperCase().equals("US") && !address.startsWith("+1"))
+        if (!country.toUpperCase(Locale.US).equals("US") && !address.startsWith("+1"))
             return false;
 
         return true;
