@@ -34,92 +34,92 @@ import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;
 
 public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit {
-	private static final String TAG = "XVoicePlus";
-	
-	private static final String XVOICE_PLUS_PACKAGE = "com.runnirr.xvoiceplus";
-	private static final String PERM_BROADCAST_SMS = "android.permission.BROADCAST_SMS";
+    private static final String TAG = "XVoicePlus";
 
-	private boolean HOOKED_GV = false;
+    private static final String XVOICE_PLUS_PACKAGE = "com.runnirr.xvoiceplus";
+    private static final String PERM_BROADCAST_SMS = "android.permission.BROADCAST_SMS";
 
-	@Override
-	public void handleLoadPackage(LoadPackageParam lpparam) throws ClassNotFoundException {
-		if (lpparam.packageName.equals(Helper.GOOGLE_VOICE_PACKAGE)) {
-			hookGoogleVoice(lpparam);
-		}
-	}
+    private boolean HOOKED_GV = false;
 
-	private void hookGoogleVoice(LoadPackageParam lpparam) {
-		if (!HOOKED_GV){
-			findAndHookMethod(Helper.GOOGLE_VOICE_PACKAGE + ".PushNotificationReceiver", lpparam.classLoader,
-					"onReceive", Context.class, Intent.class,
-					new XC_MethodHook() {
-						@Override
-						protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-							Log.d(TAG, "Received incoming Google Voice notification");
-							Context c = (Context) param.args[0];
-							Intent incomingGvIntent = new Intent().setAction(VoicePlusService.ACTION_INCOMING_VOICE);
-							c.sendOrderedBroadcast(incomingGvIntent, null);
-						}
-			});
-		HOOKED_GV= true;
-		}
-	}
-	
-	@Override
-	public void initZygote(StartupParam startupParam) {
-		hookSendSms();
-		hookXVoicePlusPermission();
-		hookSmsMessage();
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT){
-			hookAppOps();
-		}
-	}
-	
-	@TargetApi(19)
-	private void hookAppOps() {
-		Log.d(TAG, "Hooking app ops");
-	
-		XposedBridge.hookAllConstructors(findClass("com.android.server.AppOpsService.Op", null),
-				new XC_MethodHook() {
+    @Override
+    public void handleLoadPackage(LoadPackageParam lpparam) throws ClassNotFoundException {
+        if (lpparam.packageName.equals(Helper.GOOGLE_VOICE_PACKAGE)) {
+            hookGoogleVoice(lpparam);
+        }
+    }
 
-			@Override
-			protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-				if(XVOICE_PLUS_PACKAGE.equals((String) param.args[1]) && 
-						(Integer) param.args[2] == SmsUtils.OP_WRITE_SMS) {
+    private void hookGoogleVoice(LoadPackageParam lpparam) {
+        if (!HOOKED_GV){
+            findAndHookMethod(Helper.GOOGLE_VOICE_PACKAGE + ".PushNotificationReceiver", lpparam.classLoader,
+                    "onReceive", Context.class, Intent.class,
+                    new XC_MethodHook() {
+                @Override
+                protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                    Log.d(TAG, "Received incoming Google Voice notification");
+                    Context c = (Context) param.args[0];
+                    Intent incomingGvIntent = new Intent().setAction(VoicePlusService.ACTION_INCOMING_VOICE);
+                    c.sendOrderedBroadcast(incomingGvIntent, null);
+                }
+            });
+            HOOKED_GV= true;
+        }
+    }
 
-					setIntField(param.thisObject, "mode", AppOpsManager.MODE_ALLOWED);
-				}
-			}
-		
-		});
-	}
-	
-	private void hookSmsMessage(){
-		findAndHookMethod(android.telephony.SmsMessage.class, "createFromPdu", byte[].class, String.class, new XC_MethodHook() {
-			@Override
-			protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-				if(!param.args[1].equals(SmsUtils.FORMAT_3GPP)){
-					// Set to 3GPP format (GSM) since that is the format of the generated sms
-					// This likely breaks any incoming sms in CDMA format
-					param.args[1] = SmsUtils.FORMAT_3GPP;
-				}
-			}
-		});
+    @Override
+    public void initZygote(StartupParam startupParam) {
+        hookSendSms();
+        hookXVoicePlusPermission();
+        hookSmsMessage();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT){
+            hookAppOps();
+        }
+    }
 
-	}
-	
-	private void hookXVoicePlusPermission(){
-		final Class<?> pmServiceClass = findClass("com.android.server.pm.PackageManagerService", null);
+    @TargetApi(19)
+    private void hookAppOps() {
+        Log.d(TAG, "Hooking app ops");
+
+        XposedBridge.hookAllConstructors(findClass("com.android.server.AppOpsService.Op", null),
+                new XC_MethodHook() {
+
+            @Override
+            protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                if(XVOICE_PLUS_PACKAGE.equals((String) param.args[1]) &&
+                        (Integer) param.args[2] == SmsUtils.OP_WRITE_SMS) {
+
+                    setIntField(param.thisObject, "mode", AppOpsManager.MODE_ALLOWED);
+                }
+            }
+
+        });
+    }
+
+    private void hookSmsMessage(){
+        findAndHookMethod(android.telephony.SmsMessage.class, "createFromPdu", byte[].class, String.class, new XC_MethodHook() {
+            @Override
+            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                if(!param.args[1].equals(SmsUtils.FORMAT_3GPP)){
+                    // Set to 3GPP format (GSM) since that is the format of the generated sms
+                    // This likely breaks any incoming sms in CDMA format
+                    param.args[1] = SmsUtils.FORMAT_3GPP;
+                }
+            }
+        });
+
+    }
+
+    private void hookXVoicePlusPermission(){
+        final Class<?> pmServiceClass = findClass("com.android.server.pm.PackageManagerService", null);
 
         findAndHookMethod(pmServiceClass, "grantPermissionsLPw",
-        		"android.content.pm.PackageParser.Package", boolean.class, new XC_MethodHook() {
+                "android.content.pm.PackageParser.Package", boolean.class, new XC_MethodHook() {
 
             @Override
             protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                 final String pkgName = (String) getObjectField(param.args[0], "packageName");
 
                 if (XVOICE_PLUS_PACKAGE.equals(pkgName) || "org.cyanogenmod.voiceplus".equals(pkgName)) {
-                	final Object extras = getObjectField(param.args[0], "mExtras");
+                    final Object extras = getObjectField(param.args[0], "mExtras");
                     final HashSet<String> grantedPerms = 
                             (HashSet<String>) getObjectField(extras, "grantedPermissions");
                     final Object settings = getObjectField(param.thisObject, "mSettings");
@@ -127,7 +127,7 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
 
                     // Add android.permission.BROADCAST_SMS to xvoiceplus
                     if (!grantedPerms.contains(PERM_BROADCAST_SMS)) {
-                    	final Object pAccessBroadcastSms = callMethod(permissions, "get",
+                        final Object pAccessBroadcastSms = callMethod(permissions, "get",
                                 PERM_BROADCAST_SMS);
                         grantedPerms.add(PERM_BROADCAST_SMS);
                         int[] gpGids = (int[]) getObjectField(extras, "gids");
@@ -138,92 +138,92 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
                 }
             }
         });
-	}
+    }
 
 
-	private void hookSendSms(){
-		findAndHookMethod(findClass("android.telephony.SmsManager", null), "sendTextMessage",
-				String.class, String.class, String.class, PendingIntent.class, PendingIntent.class,
-				new XSmsMethodHook());
+    private void hookSendSms(){
+        findAndHookMethod(findClass("android.telephony.SmsManager", null), "sendTextMessage",
+                String.class, String.class, String.class, PendingIntent.class, PendingIntent.class,
+                new XSmsMethodHook());
 
-		findAndHookMethod(findClass("android.telephony.SmsManager", null), "sendMultipartTextMessage",
-				 String.class, String.class, ArrayList.class, ArrayList.class, ArrayList.class,
-				 new XSmsMethodHook());
-	}
-	
+        findAndHookMethod(findClass("android.telephony.SmsManager", null), "sendMultipartTextMessage",
+                String.class, String.class, ArrayList.class, ArrayList.class, ArrayList.class,
+                new XSmsMethodHook());
+    }
+
     class XSmsMethodHook extends XC_MethodHook {
 
-		@Override
-    	protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-    		String destAddr = (String) param.args[0];
-    		String scAddr = (String) param.args[1];
+        @Override
+        protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+            String destAddr = (String) param.args[0];
+            String scAddr = (String) param.args[1];
 
-    		ArrayList<String> texts;
-    		if (param.args[2] instanceof String) {
-    			texts = new ArrayList<String>(Collections.singletonList((String) param.args[2]));
-    		} else {
-    			texts = (ArrayList<String>) param.args[2];
-    		}
+            ArrayList<String> texts;
+            if (param.args[2] instanceof String) {
+                texts = new ArrayList<String>(Collections.singletonList((String) param.args[2]));
+            } else {
+                texts = (ArrayList<String>) param.args[2];
+            }
 
-    		ArrayList<PendingIntent> sentIntents;
-    		if (param.args[3] instanceof PendingIntent) {
-    			sentIntents = new ArrayList<PendingIntent>(Collections.singletonList((PendingIntent) param.args[3]));
-    		} else {
-    			sentIntents = (ArrayList<PendingIntent>) param.args[3];
-    		}
+            ArrayList<PendingIntent> sentIntents;
+            if (param.args[3] instanceof PendingIntent) {
+                sentIntents = new ArrayList<PendingIntent>(Collections.singletonList((PendingIntent) param.args[3]));
+            } else {
+                sentIntents = (ArrayList<PendingIntent>) param.args[3];
+            }
 
-    		ArrayList<PendingIntent> deliveryIntents;
-    		if (param.args[4] instanceof PendingIntent) {
-    			deliveryIntents = new ArrayList<PendingIntent>(Collections.singletonList((PendingIntent) param.args[4]));
-    		} else {
-    			deliveryIntents = (ArrayList<PendingIntent>) param.args[4];
-    		}
-    		if (sendText(destAddr, scAddr, texts, sentIntents, deliveryIntents)) {
-    			// If we sent via Google Voice, stop the system from sending its sms
-    			Log.i(TAG, "Sending message via Google Voice");
-        		param.setResult(null);    			
-    		}
-    	}
+            ArrayList<PendingIntent> deliveryIntents;
+            if (param.args[4] instanceof PendingIntent) {
+                deliveryIntents = new ArrayList<PendingIntent>(Collections.singletonList((PendingIntent) param.args[4]));
+            } else {
+                deliveryIntents = (ArrayList<PendingIntent>) param.args[4];
+            }
+            if (sendText(destAddr, scAddr, texts, sentIntents, deliveryIntents)) {
+                // If we sent via Google Voice, stop the system from sending its sms
+                Log.i(TAG, "Sending message via Google Voice");
+                param.setResult(null);
+            }
+        }
 
-	    private boolean sendText(String destAddr, String scAddr, ArrayList<String> texts,
-	    		final ArrayList<PendingIntent> sentIntents, final ArrayList<PendingIntent> deliveryIntents) throws IOException {
-	
-	    	Intent outgoingSms = new Intent().setAction(OutgoingSmsReceiver.NEW_OUTGOING_SMS)
-	    									 .putExtra("destAddr", destAddr)
-	    									 .putExtra("scAddr", scAddr)
-	    									 .putStringArrayListExtra("parts", texts)
-	    									 .putParcelableArrayListExtra("sentIntents", sentIntents)
-	    									 .putParcelableArrayListExtra("deliveryIntents", deliveryIntents);
+        private boolean sendText(String destAddr, String scAddr, ArrayList<String> texts,
+                final ArrayList<PendingIntent> sentIntents, final ArrayList<PendingIntent> deliveryIntents) throws IOException {
 
-	    	Context context = getContext();
-    		if (context != null) {
-				context.sendOrderedBroadcast(outgoingSms, null);
-				return true;
-	    	} else {
-	    		Log.e(TAG, "Unable to find a context to send the outgoingSms intent");
-	    		return false;
-	    	}
-	    }
-	    
-	    private Context getContext(){
-	    	// Try to get a context in one way or another from system
-    		Context context = null;
-    		
-    		// Seems to work for 4.4
-    		Log.i(TAG, "Trying to get context from AndroidAppHelper");
-        	context = AndroidAppHelper.currentApplication();
-    		
-        	// Seems to work for 4.2.2
-    		if (context == null) {
-    			Log.i(TAG, "Trying to get context from mSystemContext");
-    			Object systemContext = getStaticObjectField(findClass("android.app.ActivityThread", null), "mSystemContext");
-    			if (systemContext != null) {
-    				context = (Context) systemContext;
-    			}
-    		}
-    		    		
-    		return context;
-	    }
+            Intent outgoingSms = new Intent().setAction(OutgoingSmsReceiver.NEW_OUTGOING_SMS)
+                    .putExtra("destAddr", destAddr)
+                    .putExtra("scAddr", scAddr)
+                    .putStringArrayListExtra("parts", texts)
+                    .putParcelableArrayListExtra("sentIntents", sentIntents)
+                    .putParcelableArrayListExtra("deliveryIntents", deliveryIntents);
+
+            Context context = getContext();
+            if (context != null) {
+                context.sendOrderedBroadcast(outgoingSms, null);
+                return true;
+            } else {
+                Log.e(TAG, "Unable to find a context to send the outgoingSms intent");
+                return false;
+            }
+        }
+
+        private Context getContext(){
+            // Try to get a context in one way or another from system
+            Context context = null;
+
+            // Seems to work for 4.4
+            Log.i(TAG, "Trying to get context from AndroidAppHelper");
+            context = AndroidAppHelper.currentApplication();
+
+            // Seems to work for 4.2.2
+            if (context == null) {
+                Log.i(TAG, "Trying to get context from mSystemContext");
+                Object systemContext = getStaticObjectField(findClass("android.app.ActivityThread", null), "mSystemContext");
+                if (systemContext != null) {
+                    context = (Context) systemContext;
+                }
+            }
+
+            return context;
+        }
     }
 
 }

@@ -12,9 +12,9 @@ import android.util.Log;
  */
 public class OutgoingSmsReceiver extends BroadcastReceiver {
     private static final String LOGTAG = "OutgoingSmsReceiver";
-    
+
     public static final String NEW_OUTGOING_SMS = "com.runnnirr.xvoiceplus.NEW_OUTGOING_SMS";
-	
+
 
     private boolean canDeliverToAddress(Context context, Intent intent) {
         String address = intent.getStringExtra("destAddr");
@@ -45,7 +45,7 @@ public class OutgoingSmsReceiver extends BroadcastReceiver {
         if (!canDeliverToAddress(context, intent)) {
             String destination = intent.getStringExtra("destAddr");
             if (destination == null)
-            destination = "(null)";
+                destination = "(null)";
             Log.d(LOGTAG, "Sending <" + destination + "> via cellular instead of Google Voice.");
             return;
         }

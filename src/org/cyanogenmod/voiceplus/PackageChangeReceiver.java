@@ -16,7 +16,7 @@ public class PackageChangeReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         if (intent == null)
             return;
-        
+
         Log.d("XVoicePlus.PackageChangeReceiver", "Handling intent " + intent.getAction());
 
         PackageManager pm = context.getPackageManager();

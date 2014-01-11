@@ -66,17 +66,17 @@ public class VoicePlusService extends Service {
                 startRefresh();
         }
     };
-    
+
     BroadcastReceiver mOutgoingSmsReceiver;
     BroadcastReceiver mVoiceListenerReceiver;
 
-   @Override
+    @Override
     public void onDestroy() {
         super.onDestroy();
         unregisterReceiver(mConnectivityReceiver);
         unregisterReceiver(mOutgoingSmsReceiver);
         unregisterReceiver(mVoiceListenerReceiver);
-        
+
         mOutgoingSmsReceiver = null;
         mVoiceListenerReceiver = null;
     }
@@ -86,16 +86,16 @@ public class VoicePlusService extends Service {
         super.onCreate();
 
         settings = getSharedPreferences("settings", MODE_PRIVATE);
-        
+
         mOutgoingSmsReceiver = new OutgoingSmsReceiver();
         mVoiceListenerReceiver = new VoiceListenerService();
 
         IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
         registerReceiver(mConnectivityReceiver, filter);
-        
+
         IntentFilter outgoingSmsFilter = new IntentFilter(OutgoingSmsReceiver.NEW_OUTGOING_SMS);
         registerReceiver(mOutgoingSmsReceiver, outgoingSmsFilter);
-        
+
         IntentFilter incomingVoiceFilter = new IntentFilter(ACTION_INCOMING_VOICE);
         registerReceiver(mVoiceListenerReceiver, incomingVoiceFilter);
 
@@ -165,11 +165,11 @@ public class VoicePlusService extends Service {
             return;
         for (PendingIntent si: sentIntents) {
             if (si != null){
-	            try {
-	                si.send();
-	            }
-	            catch (Exception e) {
-	            }
+                try {
+                    si.send();
+                }
+                catch (Exception e) {
+                }
             }
         }
     }
@@ -180,11 +180,11 @@ public class VoicePlusService extends Service {
             return;
         for (PendingIntent si: sentIntents) {
             if (si != null) {
-	            try {
-	                si.send(Activity.RESULT_OK);
-	            }
-	            catch (Exception e) {
-	            }
+                try {
+                    si.send(Activity.RESULT_OK);
+                }
+                catch (Exception e) {
+                }
             }
         }
     }
@@ -192,10 +192,10 @@ public class VoicePlusService extends Service {
     // fetch the weirdo opaque token google voice needs...
     void fetchRnrSe(String authToken) throws ExecutionException, InterruptedException {
         JsonObject userInfo = Ion.with(this)
-        .load("https://www.google.com/voice/request/user")
-        .setHeader("Authorization", "GoogleLogin auth=" + authToken)
-        .asJsonObject()
-        .get();
+                .load("https://www.google.com/voice/request/user")
+                .setHeader("Authorization", "GoogleLogin auth=" + authToken)
+                .asJsonObject()
+                .get();
 
         String rnrse = userInfo.get("r").getAsString();
 
@@ -303,31 +303,31 @@ public class VoicePlusService extends Service {
     // hit the google voice api to send a text
     void sendRnrSe(final String authToken, String rnrse, String number, String text) throws Exception {
         JsonObject json = Ion.with(this)
-        .load("https://www.google.com/voice/sms/send/")
-        .onHeaders(new HeadersCallback() {
-            @Override
-            public void onHeaders(RawHeaders headers) {
-                if (headers.getResponseCode() == 401) {
-                    AccountManager.get(VoicePlusService.this).invalidateAuthToken("com.google", authToken);
-                    settings.edit().remove("_rnr_se").apply();
-                }
-            }
-        })
-        .setHeader("Authorization", "GoogleLogin auth=" + authToken)
-        .setBodyParameter("phoneNumber", number)
-        .setBodyParameter("sendErrorSms", "0")
-        .setBodyParameter("text", text)
-        .setBodyParameter("_rnr_se", rnrse)
-        .asJsonObject()
-        .get();
+                .load("https://www.google.com/voice/sms/send/")
+                .onHeaders(new HeadersCallback() {
+                    @Override
+                    public void onHeaders(RawHeaders headers) {
+                        if (headers.getResponseCode() == 401) {
+                            AccountManager.get(VoicePlusService.this).invalidateAuthToken("com.google", authToken);
+                            settings.edit().remove("_rnr_se").apply();
+                        }
+                    }
+                })
+                .setHeader("Authorization", "GoogleLogin auth=" + authToken)
+                .setBodyParameter("phoneNumber", number)
+                .setBodyParameter("sendErrorSms", "0")
+                .setBodyParameter("text", text)
+                .setBodyParameter("_rnr_se", rnrse)
+                .asJsonObject()
+                .get();
 
         if (!json.get("ok").getAsBoolean())
             throw new Exception(json.toString());
     }
 
     void markRnrSe(final String authToken, String rnrse, String id, int read) throws Exception {
-    	// id - GV messages id
-    	// read - 0 = unread, 1 = read
+        // id - GV messages id
+        // read - 0 = unread, 1 = read
         Ion.with(this)
         .load("https://www.google.com/voice/inbox/mark/")
         .onHeaders(new HeadersCallback() {
@@ -369,13 +369,13 @@ public class VoicePlusService extends Service {
         // 11 is outgoing
         @SerializedName("type")
         int type;
-        
+
         @SerializedName("id")
         String id;
-        
+
         @SerializedName("conversationId")
         String conversationId;
-        
+
         @SerializedName("isRead")
         int read;
     }
@@ -388,17 +388,17 @@ public class VoicePlusService extends Service {
 
     private static final Uri URI_SENT = Uri.parse("content://sms/sent");
     private static final Uri URI_RECEIVED = Uri.parse("content://sms/inbox");
-    
+
     synchronized boolean messageExists(Message m, Uri uri) {
-    	Cursor c = getContentResolver().query(uri, null, "date = ? AND body = ?",
-    			new String[] { String.valueOf(m.date), m.message }, null);
-	    try {
-	        return c.moveToFirst();
-	    }
-	    finally {
-	        c.close();
-	    }
-    	
+        Cursor c = getContentResolver().query(uri, null, "date = ? AND body = ?",
+                new String[] { String.valueOf(m.date), m.message }, null);
+        try {
+            return c.moveToFirst();
+        }
+        finally {
+            c.close();
+        }
+
     }
 
     // insert a message into the sms/mms provider.
@@ -415,28 +415,28 @@ public class VoicePlusService extends Service {
             uri = URI_SENT;
             type = PROVIDER_OUTGOING_SMS;
         } else {
-        	return;
+            return;
         }
-        
+
         if (!messageExists(m, uri)) {
-	        ContentValues values = new ContentValues();
-	        values.put("address", m.phoneNumber);
-	        values.put("body", m.message);
-	        values.put("type", type);
-	        values.put("date", m.date);
-	        values.put("date_sent", m.date);
-	        values.put("read", m.read);
-	        getContentResolver().insert(uri, values);
+            ContentValues values = new ContentValues();
+            values.put("address", m.phoneNumber);
+            values.put("body", m.message);
+            values.put("type", type);
+            values.put("date", m.date);
+            values.put("date_sent", m.date);
+            values.put("read", m.read);
+            getContentResolver().insert(uri, values);
         }
     }
 
     synchronized void synthesizeMessage(Message m) {
         if (!messageExists(m, URI_RECEIVED)){
-	        try{
-	        	SmsUtils.createFakeSms(this, m.phoneNumber, m.message, m.date);
-	        } catch (IOException e){
-	        	Log.e(LOGTAG, "IOException when creating fake sms, ignoring");
-	        }
+            try{
+                SmsUtils.createFakeSms(this, m.phoneNumber, m.message, m.date);
+            } catch (IOException e){
+                Log.e(LOGTAG, "IOException when creating fake sms, ignoring");
+            }
         }
     }
 
@@ -452,20 +452,20 @@ public class VoicePlusService extends Service {
         final String authToken = getAuthToken(account);
 
         Payload payload = Ion.with(this)
-        .load("https://www.google.com/voice/request/messages")
-        .onHeaders(new HeadersCallback() {
-            @Override
-            public void onHeaders(RawHeaders headers) {
-                if (headers.getResponseCode() == 401) {
-                    Log.e(LOGTAG, "Refresh failed:\n" + headers.toHeaderString());
-                    AccountManager.get(VoicePlusService.this).invalidateAuthToken("com.google", authToken);
-                    settings.edit().remove("_rnr_se").apply();
-                }
-            }
-        })
-        .setHeader("Authorization", "GoogleLogin auth=" + authToken)
-        .as(Payload.class)
-        .get();
+                .load("https://www.google.com/voice/request/messages")
+                .onHeaders(new HeadersCallback() {
+                    @Override
+                    public void onHeaders(RawHeaders headers) {
+                        if (headers.getResponseCode() == 401) {
+                            Log.e(LOGTAG, "Refresh failed:\n" + headers.toHeaderString());
+                            AccountManager.get(VoicePlusService.this).invalidateAuthToken("com.google", authToken);
+                            settings.edit().remove("_rnr_se").apply();
+                        }
+                    }
+                })
+                .setHeader("Authorization", "GoogleLogin auth=" + authToken)
+                .as(Payload.class)
+                .get();
 
         ArrayList<Message> all = new ArrayList<Message>();
         for (Conversation conversation: payload.conversations) {
@@ -476,7 +476,7 @@ public class VoicePlusService extends Service {
         Collections.sort(all, new Comparator<Message>() {
             @Override
             public int compare(Message lhs, Message rhs) {
-            	return Long.valueOf(lhs.date).compareTo(rhs.date);
+                return Long.valueOf(lhs.date).compareTo(rhs.date);
             }
         });
 
@@ -503,16 +503,16 @@ public class VoicePlusService extends Service {
             if (message.type == VOICE_OUTGOING_SMS) {
                 boolean found = recentSent.contains(message.message);
                 if (found) {
-                	recentSent.remove(message.message);
+                    recentSent.remove(message.message);
                 } else {
                     insertMessage(message);
                 }
             } else if (message.type == VOICE_INCOMING_SMS) {
-            	synthesizeMessage(message);
+                synthesizeMessage(message);
             }
-            
+
             markReadIfNeeded(message);
-            
+
         }
         settings.edit()
         .putLong("timestamp", max)
@@ -520,36 +520,36 @@ public class VoicePlusService extends Service {
     }
 
     private void markReadIfNeeded(Message message){
-    	if (message.read == 0){
-    		Uri uri;
-    		if (message.type == VOICE_INCOMING_SMS) {
-    			uri = URI_RECEIVED;
-    		} else if (message.type == VOICE_OUTGOING_SMS) {
-    			uri = URI_SENT;
-    		} else {
-    			return;
-    		}
-    		
-    		Cursor c = getContentResolver().query(uri, null, "date = ? AND body = ?",
-        			new String[] { String.valueOf(message.date), message.message }, null);
-    		try {
-	    		final String authToken = getAuthToken(settings.getString("account", null));
-	    		String rnrse = settings.getString("_rnr_se", null);
-	    		if (rnrse == null) {
-	    			fetchRnrSe(authToken);
-	    			rnrse = settings.getString("_rnr_se", null);
-	    		}
-	    		if(c.moveToFirst()){
-	    			markRnrSe(authToken, rnrse, message.id, message.read);
-	    		}
-    		} catch (Exception e) {
-    			Log.w(LOGTAG, "Error marking message as read. ID: " + message.id);
-    		} finally {
-    			c.close();
-    		}
-    	}
+        if (message.read == 0){
+            Uri uri;
+            if (message.type == VOICE_INCOMING_SMS) {
+                uri = URI_RECEIVED;
+            } else if (message.type == VOICE_OUTGOING_SMS) {
+                uri = URI_SENT;
+            } else {
+                return;
+            }
+
+            Cursor c = getContentResolver().query(uri, null, "date = ? AND body = ?",
+                    new String[] { String.valueOf(message.date), message.message }, null);
+            try {
+                final String authToken = getAuthToken(settings.getString("account", null));
+                String rnrse = settings.getString("_rnr_se", null);
+                if (rnrse == null) {
+                    fetchRnrSe(authToken);
+                    rnrse = settings.getString("_rnr_se", null);
+                }
+                if(c.moveToFirst()){
+                    markRnrSe(authToken, rnrse, message.id, message.read);
+                }
+            } catch (Exception e) {
+                Log.w(LOGTAG, "Error marking message as read. ID: " + message.id);
+            } finally {
+                c.close();
+            }
+        }
     }
-    
+
     void startRefresh() {
         new Thread() {
             @Override
