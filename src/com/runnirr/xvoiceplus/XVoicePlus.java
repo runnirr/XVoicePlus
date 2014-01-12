@@ -226,6 +226,16 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
                 }
             }
 
+            // Seems to work for 4.1.1
+            if (context == null) {
+                Log.i(TAG, "Trying to get activityThread from systemMain");
+                Object activityThread = callStaticMethod(findClass("android.app.ActivityThread", null), "systemMain");
+                if (activityThread != null){
+                    Log.i(TAG, "Trying to get context from getSystemContext");
+                    context = (Context) callMethod(activityThread, "getSystemContext");
+                }
+            }
+
             return context;
         }
     }
