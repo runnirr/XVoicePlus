@@ -184,8 +184,9 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
             }
             if (sendText(destAddr, scAddr, texts, sentIntents, deliveryIntents)) {
                 // If we sent via Google Voice, stop the system from sending its sms
-                Log.i(TAG, "Sending message via Google Voice");
                 param.setResult(null);
+            } else {
+                Log.i(TAG, "Send text failed. Using regluar number");
             }
         }
 

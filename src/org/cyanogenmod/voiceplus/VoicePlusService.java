@@ -22,6 +22,7 @@ import android.os.IBinder;
 import android.telephony.PhoneNumberUtils;
 import android.telephony.TelephonyManager;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -29,6 +30,7 @@ import com.google.gson.annotations.SerializedName;
 import com.koushikdutta.async.http.libcore.RawHeaders;
 import com.koushikdutta.ion.HeadersCallback;
 import com.koushikdutta.ion.Ion;
+import com.runnirr.xvoiceplus.R;
 import com.runnirr.xvoiceplus.SmsUtils;
 
 import java.io.IOException;
@@ -100,6 +102,8 @@ public class VoicePlusService extends Service {
         registerReceiver(mVoiceListenerReceiver, incomingVoiceFilter);
 
         startRefresh();
+
+        Toast.makeText(this, getResources().getString(R.string.service_started), Toast.LENGTH_LONG).show();
     }
 
     // parse out the intent extras from android.intent.action.NEW_OUTGOING_SMS
@@ -112,7 +116,6 @@ public class VoicePlusService extends Service {
         ArrayList<PendingIntent> sentIntents = intent.getParcelableArrayListExtra("sentIntents");
         ArrayList<PendingIntent> deliveryIntents = intent.getParcelableArrayListExtra("deliveryIntents");
 
-        startRefresh();
         onSendMultipartText(destAddr, scAddr, parts, sentIntents, deliveryIntents, multipart);
     }
 

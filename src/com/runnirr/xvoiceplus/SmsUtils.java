@@ -13,7 +13,7 @@ import android.telephony.PhoneNumberUtils;
 import android.util.Log;
 
 public class SmsUtils {
-    private static final String TAG = "SmsUtils";
+    private static final String TAG = "XVoiceSmsUtils";
 
     public static final String FORMAT_3GPP = "3gpp";
     public static final int OP_WRITE_SMS = 15;
