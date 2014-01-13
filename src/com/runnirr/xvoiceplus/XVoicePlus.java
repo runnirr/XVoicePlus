@@ -218,7 +218,7 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
             Log.i(TAG, "Trying to get context from AndroidAppHelper");
             context = AndroidAppHelper.currentApplication();
 
-            // Seems to work for 4.2.2
+            // Seems to work for 4.2
             if (context == null) {
                 Log.i(TAG, "Trying to get context from mSystemContext");
                 Object systemContext = getStaticObjectField(findClass("android.app.ActivityThread", null), "mSystemContext");
@@ -227,7 +227,7 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
                 }
             }
 
-            // Seems to work for 4.1.1
+            // Seems to work for 4.1 and 4.0
             if (context == null) {
                 Log.i(TAG, "Trying to get activityThread from systemMain");
                 Object activityThread = callStaticMethod(findClass("android.app.ActivityThread", null), "systemMain");
