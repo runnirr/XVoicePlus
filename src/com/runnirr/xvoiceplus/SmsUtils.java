@@ -44,7 +44,11 @@ public class SmsUtils {
             bo.write(scBytes);
             bo.write(0x04);
             bo.write((byte) sender.length());
-            bo.write(senderBytes);
+            if (senderBytes != null) {
+                bo.write(senderBytes);
+            } else {
+                Log.w(TAG, "senderBytes are null, be skeptical");
+            }
             bo.write(0x00);
             bo.write(0x00); // encoding: 0 for default 7bit
             bo.write(dateBytes);
