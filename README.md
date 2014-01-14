@@ -2,7 +2,7 @@ XVoicePlus
 ==========
 # Installation
 * Install Google Voice from the play store if you don't have it already
-* Download and install the XVoice+ apk (at the end of this post) as you would sideload any other apk
+* Install the XVoice+ apk from the Xposed Repo (http://repo.xposed.info/module/com.runnirr.xvoiceplus)
 * Enable XVoice+ in Xposed
 * Run the XVoice+ app and select your Google Voice account
 * Disable "Text Notifications" in the Google Voice app settings to avoid double notifications
