@@ -24,14 +24,14 @@ Using Google Hangouts -
 
 Receiving messages works.
 
-Sending messages does not work - message is never sent
+Sending messages works.
 
 ## 4.1.1 
 Using Google Hangouts -
 
 Receiving messages works.
 
-Sending messages does not work - message is never sent
+Sending messages works.
 
 
 ## 4.2.2 
@@ -48,13 +48,11 @@ Receiving messages works.
 
 Sending messages works.
 
-**Note: In order for messages sent on other devices to show up, you must give "write sms" permissions through AppOps to XVoice+**
-
 # Side Effects
 Because of the way some system apps are being overwrote, I expect that some things will break.
 * There will be no way to send sms via your carrier any app that uses SmsManager to send texts will be sent via Google Voice.
-* All sms are assumed to be in GSM format. A pdu is needed to broadcast that we received an sms. This means that any incoming sms that is in CDMA format will likely cause things to crash. The fake messages still work on a CDMA phone (or atleast on my Galaxy Nexus they do)
 * The app grants itself permission for BROADCAST_SMS which does not appear in the list of permission since it is a system level permission.
+* On 4.4+ the app grants itself access to write to the SMS history
 
 # Support
 http://forum.xda-developers.com/showthread.php?t=2598889
