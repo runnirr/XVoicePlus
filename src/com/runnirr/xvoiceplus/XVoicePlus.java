@@ -23,6 +23,7 @@ import android.app.AppOpsManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.XResources;
 import android.os.Build;
 import android.telephony.SmsMessage;
@@ -30,6 +31,7 @@ import android.util.Log;
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.IXposedHookZygoteInit;
 import de.robv.android.xposed.XC_MethodHook;
+import de.robv.android.xposed.XSharedPreferences;
 import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;
 
@@ -40,6 +42,8 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
     private static final String PERM_BROADCAST_SMS = "android.permission.BROADCAST_SMS";
 
     private boolean HOOKED_GV = false;
+
+    private SharedPreferences mSettings;
 
     @Override
     public void handleLoadPackage(LoadPackageParam lpparam) throws ClassNotFoundException {
@@ -70,6 +74,7 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
     @Override
     public void initZygote(StartupParam startupParam) {
         XResources.setSystemWideReplacement("android", "bool", "config_sms_capable", true);
+        mSettings = new XSharedPreferences("com.runnirr.xvoiceplus", "settings");
 
         hookSendSms();
         hookXVoicePlusPermission();
@@ -160,6 +165,9 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
 
         @Override
         protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+            if (!signedIn()){
+                return;
+            }
             String destAddr = (String) param.args[0];
             String scAddr = (String) param.args[1];
 
@@ -242,6 +250,10 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
 
             return context;
         }
+    }
+
+    private boolean signedIn() {
+        return mSettings.getString("account", null) != null;
     }
 
 }
