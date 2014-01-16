@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -68,7 +69,7 @@ public class VoicePlusService extends Service {
             ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
             NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
             if (activeNetworkInfo != null)
-                startRefresh();
+                startRefresh(false);
         }
     };
 
@@ -87,7 +88,7 @@ public class VoicePlusService extends Service {
         IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
         registerReceiver(mConnectivityReceiver, filter);
 
-        startRefresh();
+        startRefresh(false);
 
         Toast.makeText(this, getResources().getString(R.string.service_started), Toast.LENGTH_LONG).show();
     }
@@ -162,7 +163,7 @@ public class VoicePlusService extends Service {
         else if (ACTION_INCOMING_VOICE.equals(intent.getAction())) {
             if (null == settings.getString("account", null))
                 return ret;
-            startRefresh();
+            startRefresh(true);
         }
         else if (ACCOUNT_CHANGED.equals(intent.getAction())) {
             new Thread() {
@@ -572,17 +573,23 @@ public class VoicePlusService extends Service {
         }
     }
 
-    void startRefresh() {
-        new Thread() {
-            @Override
-            public void run() {
-                try {
-                    refreshMessages();
+    private volatile long lastRun = 0L;
+    private final long runDelta = 5000L; // Refresh no more than every 5 seconds
+    synchronized void startRefresh(boolean force) {
+        long now = new Date().getTime();
+        if (force || now - lastRun > runDelta) {
+            new Thread() {
+                @Override
+                public void run() {
+                    try {
+                        refreshMessages();
+                    }
+                    catch (Exception e) {
+                        Log.e(LOGTAG, "Error refreshing messages", e);
+                    }
                 }
-                catch (Exception e) {
-                    Log.e(LOGTAG, "Error refreshing messages", e);
-                }
-            }
-        }.start();
+            }.start();
+            lastRun = now;
+        }
     }
 }
