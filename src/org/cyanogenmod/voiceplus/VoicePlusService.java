@@ -22,7 +22,6 @@ import android.os.IBinder;
 import android.telephony.PhoneNumberUtils;
 import android.telephony.TelephonyManager;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -30,7 +29,6 @@ import com.google.gson.annotations.SerializedName;
 import com.koushikdutta.async.http.libcore.RawHeaders;
 import com.koushikdutta.ion.HeadersCallback;
 import com.koushikdutta.ion.Ion;
-import com.runnirr.xvoiceplus.R;
 import com.runnirr.xvoiceplus.SmsUtils;
 
 import java.io.IOException;
@@ -89,8 +87,6 @@ public class VoicePlusService extends Service {
         registerReceiver(mConnectivityReceiver, filter);
 
         startRefresh(false);
-
-        Toast.makeText(this, getResources().getString(R.string.service_started), Toast.LENGTH_LONG).show();
     }
 
     public boolean canDeliverToAddress(Intent intent) {

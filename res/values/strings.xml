@@ -20,5 +20,4 @@
     <string name="disable">Disable</string>
     <string name="account">Account</string>
     <string name="not_granted">Permission unavailable:\n%s</string>
-    <string name="service_started">XVoice+ is now running. SMS messages will be sent through Google Voice.</string>
 </resources>
