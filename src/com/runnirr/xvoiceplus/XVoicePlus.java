@@ -15,7 +15,6 @@ import java.util.Collections;
 import java.util.HashSet;
 
 import org.cyanogenmod.voiceplus.Helper;
-import org.cyanogenmod.voiceplus.OutgoingSmsReceiver;
 import org.cyanogenmod.voiceplus.VoicePlusService;
 
 import android.annotation.TargetApi;
@@ -58,8 +57,10 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
                 protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
                     Log.d(TAG, "Received incoming Google Voice notification");
                     Context c = (Context) param.args[0];
-                    Intent incomingGvIntent = new Intent().setAction(VoicePlusService.ACTION_INCOMING_VOICE);
-                    c.sendOrderedBroadcast(incomingGvIntent, null);
+                    Intent incomingGvIntent = new Intent()
+                            .setAction(VoicePlusService.ACTION_INCOMING_VOICE);
+
+                    c.startService(incomingGvIntent);
                 }
             });
             HOOKED_GV= true;
@@ -193,17 +194,19 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
         private boolean sendText(String destAddr, String scAddr, ArrayList<String> texts,
                 final ArrayList<PendingIntent> sentIntents, final ArrayList<PendingIntent> deliveryIntents) throws IOException {
 
-            Intent outgoingSms = new Intent().setAction(OutgoingSmsReceiver.NEW_OUTGOING_SMS)
-                    .putExtra("destAddr", destAddr)
-                    .putExtra("scAddr", scAddr)
-                    .putStringArrayListExtra("parts", texts)
-                    .putParcelableArrayListExtra("sentIntents", sentIntents)
-                    .putParcelableArrayListExtra("deliveryIntents", deliveryIntents);
-
             Context context = getContext();
             if (context != null) {
-                context.sendOrderedBroadcast(outgoingSms, null);
+                Intent outgoingSms = new Intent()
+                        .setAction(VoicePlusService.NEW_OUTGOING_SMS)
+                        .putExtra("destAddr", destAddr)
+                        .putExtra("scAddr", scAddr)
+                        .putStringArrayListExtra("parts", texts)
+                        .putParcelableArrayListExtra("sentIntents", sentIntents)
+                        .putParcelableArrayListExtra("deliveryIntents", deliveryIntents);
+
+                context.startService(outgoingSms);
                 return true;
+
             } else {
                 Log.e(TAG, "Unable to find a context to send the outgoingSms intent");
                 return false;

@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.concurrent.ExecutionException;
@@ -46,7 +47,9 @@ import java.util.concurrent.ExecutionException;
  * Created by koush on 7/5/13.
  */
 public class VoicePlusService extends Service {
-    public static final String ACTION_INCOMING_VOICE = VoicePlusService.class.getPackage().getName() + ".INCOMING_VOICE";
+    public static final String ACTION_INCOMING_VOICE = "com.runnirr.xvoiceplus.INCOMING_VOICE";
+    public static final String NEW_OUTGOING_SMS = "com.runnnirr.xvoiceplus.NEW_OUTGOING_SMS";
+
     private static final String LOGTAG = "VoicePlusService";
 
     private SharedPreferences settings;
@@ -69,18 +72,10 @@ public class VoicePlusService extends Service {
         }
     };
 
-    BroadcastReceiver mOutgoingSmsReceiver;
-    BroadcastReceiver mVoiceListenerReceiver;
-
     @Override
     public void onDestroy() {
         super.onDestroy();
         unregisterReceiver(mConnectivityReceiver);
-        unregisterReceiver(mOutgoingSmsReceiver);
-        unregisterReceiver(mVoiceListenerReceiver);
-
-        mOutgoingSmsReceiver = null;
-        mVoiceListenerReceiver = null;
     }
 
     @Override
@@ -89,34 +84,58 @@ public class VoicePlusService extends Service {
 
         settings = getSharedPreferences("settings", MODE_PRIVATE);
 
-        mOutgoingSmsReceiver = new OutgoingSmsReceiver();
-        mVoiceListenerReceiver = new VoiceListenerService();
-
         IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
         registerReceiver(mConnectivityReceiver, filter);
-
-        IntentFilter outgoingSmsFilter = new IntentFilter(OutgoingSmsReceiver.NEW_OUTGOING_SMS);
-        registerReceiver(mOutgoingSmsReceiver, outgoingSmsFilter);
-
-        IntentFilter incomingVoiceFilter = new IntentFilter(ACTION_INCOMING_VOICE);
-        registerReceiver(mVoiceListenerReceiver, incomingVoiceFilter);
 
         startRefresh();
 
         Toast.makeText(this, getResources().getString(R.string.service_started), Toast.LENGTH_LONG).show();
     }
 
+    public boolean canDeliverToAddress(Intent intent) {
+        String address = intent.getStringExtra("destAddr");
+
+        if (address == null) {
+            Log.w(LOGTAG, "address is null");
+            return false;
+        }
+        if (address.startsWith("+") && !address.startsWith("+1")) {
+            Log.w(LOGTAG, "address starts with a + but not +1");
+            return false;
+        }
+
+        TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+        String country = tm.getNetworkCountryIso();
+        if (country == null)
+            country = tm.getSimCountryIso();
+        if (country == null) {
+            Log.w(LOGTAG, "Couldn't get country info. Looking for +1 or <= 10 digits");
+            return address.startsWith("+1") || address.length() <= 10;
+        }
+
+        if (!country.toUpperCase(Locale.US).equals("US") && !address.startsWith("+1")) {
+            Log.w(LOGTAG, "Phone indicates you are outside of the US");
+            return false;
+        }
+
+        return true;
+    }
+
     // parse out the intent extras from android.intent.action.NEW_OUTGOING_SMS
     // and send it off via google voice
     void handleOutgoingSms(Intent intent) {
-        boolean multipart = intent.getBooleanExtra("multipart", false);
-        String destAddr = intent.getStringExtra("destAddr");
-        String scAddr = intent.getStringExtra("scAddr");
-        ArrayList<String> parts = intent.getStringArrayListExtra("parts");
-        ArrayList<PendingIntent> sentIntents = intent.getParcelableArrayListExtra("sentIntents");
-        ArrayList<PendingIntent> deliveryIntents = intent.getParcelableArrayListExtra("deliveryIntents");
+        if (canDeliverToAddress(intent)){
+            boolean multipart = intent.getBooleanExtra("multipart", false);
+            String destAddr = intent.getStringExtra("destAddr");
+            String scAddr = intent.getStringExtra("scAddr");
+            ArrayList<String> parts = intent.getStringArrayListExtra("parts");
+            ArrayList<PendingIntent> sentIntents = intent.getParcelableArrayListExtra("sentIntents");
+            ArrayList<PendingIntent> deliveryIntents = intent.getParcelableArrayListExtra("deliveryIntents");
 
-        onSendMultipartText(destAddr, scAddr, parts, sentIntents, deliveryIntents, multipart);
+            onSendMultipartText(destAddr, scAddr, parts, sentIntents, deliveryIntents, multipart);
+        } else {
+            Log.w(LOGTAG, "Unable to send via GV. Falling back to carrier.");
+        }
     }
 
     @Override
@@ -132,7 +151,7 @@ public class VoicePlusService extends Service {
             return ret;
 
         // handle an outgoing sms on a background thread.
-        if (OutgoingSmsReceiver.NEW_OUTGOING_SMS.equals(intent.getAction())) {
+        if (NEW_OUTGOING_SMS.equals(intent.getAction())) {
             new Thread() {
                 @Override
                 public void run() {
