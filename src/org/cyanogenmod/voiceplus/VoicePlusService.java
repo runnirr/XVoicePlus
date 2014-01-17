@@ -210,8 +210,7 @@ public class VoicePlusService extends Service {
 
     // fetch the weirdo opaque token google voice needs...
     void fetchRnrSe(String authToken) throws ExecutionException, InterruptedException {
-        JsonObject userInfo = Ion.with(this)
-                .load("https://www.google.com/voice/request/user")
+        JsonObject userInfo = Ion.with(this, "https://www.google.com/voice/request/user")
                 .setHeader("Authorization", "GoogleLogin auth=" + authToken)
                 .asJsonObject()
                 .get();
@@ -230,8 +229,7 @@ public class VoicePlusService extends Service {
                     if (!phone.get("smsEnabled").getAsBoolean())
                         break;
                     Log.i(LOGTAG, "Disabling SMS forwarding to phone.");
-                    Ion.with(this)
-                    .load("https://www.google.com/voice/settings/editForwardingSms/")
+                    Ion.with(this, "https://www.google.com/voice/settings/editForwardingSms/")
                     .setHeader("Authorization", "GoogleLogin auth=" + authToken)
                     .setBodyParameter("phoneId", entry.getKey())
                     .setBodyParameter("enabled", "0")
@@ -321,8 +319,7 @@ public class VoicePlusService extends Service {
 
     // hit the google voice api to send a text
     void sendRnrSe(final String authToken, String rnrse, String number, String text) throws Exception {
-        JsonObject json = Ion.with(this)
-                .load("https://www.google.com/voice/sms/send/")
+        JsonObject json = Ion.with(this, "https://www.google.com/voice/sms/send/")
                 .onHeaders(new HeadersCallback() {
                     @Override
                     public void onHeaders(RawHeaders headers) {
@@ -347,8 +344,7 @@ public class VoicePlusService extends Service {
     void markRnrSe(final String authToken, String rnrse, String id, int read) throws Exception {
         // id - GV messages id
         // read - 0 = unread, 1 = read
-        Ion.with(this)
-        .load("https://www.google.com/voice/inbox/mark/")
+        Ion.with(this, "https://www.google.com/voice/inbox/mark/")
         .onHeaders(new HeadersCallback() {
             @Override
             public void onHeaders(RawHeaders headers) {
@@ -470,8 +466,7 @@ public class VoicePlusService extends Service {
         // tokens!
         final String authToken = getAuthToken(account);
 
-        Payload payload = Ion.with(this)
-                .load("https://www.google.com/voice/request/messages")
+        Payload payload = Ion.with(this, "https://www.google.com/voice/request/messages")
                 .onHeaders(new HeadersCallback() {
                     @Override
                     public void onHeaders(RawHeaders headers) {
