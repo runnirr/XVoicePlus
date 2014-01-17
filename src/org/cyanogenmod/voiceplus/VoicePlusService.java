@@ -460,7 +460,7 @@ public class VoicePlusService extends Service {
     }
 
     // refresh the messages that were on the server
-    void refreshMessages() throws Exception {
+    synchronized void refreshMessages() throws Exception {
         String account = settings.getString("account", null);
         if (account == null)
             return;
