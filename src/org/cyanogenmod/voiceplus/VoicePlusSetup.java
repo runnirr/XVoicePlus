@@ -63,7 +63,7 @@ public class VoicePlusSetup extends Activity {
                 new Thread() {
                     @Override
                     public void run() {
-                        super.run();invalidateToken(previousAccount);
+                        invalidateToken(previousAccount);
                     }
                 }.start();
 

@@ -44,11 +44,15 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
     private boolean HOOKED_GV = false;
 
     private SharedPreferences mSettings;
+    private Class<?> xvoicePlusClass;
 
     @Override
     public void handleLoadPackage(LoadPackageParam lpparam) throws ClassNotFoundException {
         if (lpparam.packageName.equals(Helper.GOOGLE_VOICE_PACKAGE)) {
             hookGoogleVoice(lpparam);
+        }
+        if (lpparam.packageName.equals(XVOICE_PLUS_PACKAGE)) {
+            xvoicePlusClass = lpparam.getClass();
         }
     }
 
@@ -61,7 +65,7 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
                 protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
                     Log.d(TAG, "Received incoming Google Voice notification");
                     Context c = (Context) param.args[0];
-                    Intent incomingGvIntent = new Intent()
+                    Intent incomingGvIntent = new Intent(c, xvoicePlusClass)
                             .setAction(VoicePlusService.ACTION_INCOMING_VOICE);
 
                     c.startService(incomingGvIntent);
@@ -204,7 +208,7 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
 
             Context context = getContext();
             if (context != null) {
-                Intent outgoingSms = new Intent()
+                Intent outgoingSms = new Intent(context, xvoicePlusClass)
                         .setAction(VoicePlusService.NEW_OUTGOING_SMS)
                         .putExtra("destAddr", destAddr)
                         .putExtra("scAddr", scAddr)

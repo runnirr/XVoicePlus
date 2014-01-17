@@ -4,7 +4,6 @@ import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.util.Log;
 
@@ -23,31 +22,17 @@ public class PackageChangeReceiver extends BroadcastReceiver {
         if (pm == null)
             return;
 
-        //ComponentName listenerservice = new ComponentName(context, VoiceListenerService.class);
-        ComponentName service = new ComponentName(context, VoicePlusService.class);
-        //ComponentName receiver = new ComponentName(context, OutgoingSmsReceiver.class);
         ComponentName activity = new ComponentName(context, VoicePlusSetup.class);
 
-        PackageInfo pkg;
+        int ENABLED_STATE;
         try {
-            pkg = pm.getPackageInfo(Helper.GOOGLE_VOICE_PACKAGE, 0);
+            pm.getPackageInfo(Helper.GOOGLE_VOICE_PACKAGE, 0);
+            ENABLED_STATE =  PackageManager.COMPONENT_ENABLED_STATE_ENABLED;
         }
         catch (Exception e) {
-            pkg = null;
+            ENABLED_STATE =  PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
         }
 
-        if (pkg != null) {
-            pm.setComponentEnabledSetting(activity, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 0);
-            pm.setComponentEnabledSetting(service, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 0);
-            //pm.setComponentEnabledSetting(receiver, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 0);
-            //pm.setComponentEnabledSetting(listenerservice, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, 0);
-            context.startService(new Intent(context, VoicePlusService.class));
-        }
-        else {
-            pm.setComponentEnabledSetting(activity, PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 0);
-            pm.setComponentEnabledSetting(service, PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 0);
-            //pm.setComponentEnabledSetting(receiver, PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 0);
-            //pm.setComponentEnabledSetting(listenerservice, PackageManager.COMPONENT_ENABLED_STATE_DISABLED, 0);
-        }
+        pm.setComponentEnabledSetting(activity, ENABLED_STATE, 0);
     }
 }

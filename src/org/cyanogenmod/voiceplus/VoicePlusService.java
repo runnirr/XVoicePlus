@@ -5,8 +5,8 @@ import android.accounts.AccountManager;
 import android.accounts.AuthenticatorException;
 import android.accounts.OperationCanceledException;
 import android.app.Activity;
+import android.app.IntentService;
 import android.app.PendingIntent;
-import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.ContentValues;
 import android.content.Context;
@@ -18,7 +18,6 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.telephony.PhoneNumberUtils;
 import android.telephony.TelephonyManager;
 import android.util.Log;
@@ -45,20 +44,13 @@ import java.util.concurrent.ExecutionException;
 /**
  * Created by koush on 7/5/13.
  */
-public class VoicePlusService extends Service {
+public class VoicePlusService extends IntentService {
     public static final String ACTION_INCOMING_VOICE = "com.runnirr.xvoiceplus.INCOMING_VOICE";
     public static final String NEW_OUTGOING_SMS = "com.runnnirr.xvoiceplus.NEW_OUTGOING_SMS";
 
     private static final String LOGTAG = "VoicePlusService";
 
-    private SharedPreferences settings;
-
-    @Override
-    public IBinder onBind(Intent intent) {
-        return null;
-    }
-
-    BroadcastReceiver mConnectivityReceiver = new BroadcastReceiver() {
+    final BroadcastReceiver mConnectivityReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             // refresh inbox if connectivity returns
@@ -70,25 +62,23 @@ public class VoicePlusService extends Service {
                 startRefresh(false);
         }
     };
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        unregisterReceiver(mConnectivityReceiver);
+    
+    public VoicePlusService() {
+        this("XVoicePlusService");
     }
+    
+    
+    public VoicePlusService(String name) {
+        super(name);
 
-    @Override
-    public void onCreate() {
-        super.onCreate();
-
-        settings = getSharedPreferences("settings", MODE_PRIVATE);
-
-        IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
-        registerReceiver(mConnectivityReceiver, filter);
-
-        startRefresh(false);
+//        IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
+//        registerReceiver(mConnectivityReceiver, filter);
     }
-
+    
+    private SharedPreferences getSettings() {
+        return getSharedPreferences("settings", MODE_PRIVATE);
+    }
+    
     public boolean canDeliverToAddress(Intent intent) {
         String address = intent.getStringExtra("destAddr");
 
@@ -136,44 +126,32 @@ public class VoicePlusService extends Service {
     }
 
     @Override
-    public int onStartCommand(final Intent intent, int flags, int startId) {
-        int ret = super.onStartCommand(intent, flags, startId);
-
-        if (null == settings.getString("account", null)) {
+    protected void onHandleIntent(final Intent intent) {
+        final String account = getSettings().getString("account", null);
+        if (account == null) {
             stopSelf();
-            return ret;
+            return;
         }
 
         if (intent == null)
-            return ret;
+            return;
 
-        // handle an outgoing sms on a background thread.
+        // handle an outgoing sms
         if (NEW_OUTGOING_SMS.equals(intent.getAction())) {
-            new Thread() {
-                @Override
-                public void run() {
-                    handleOutgoingSms(intent);
-                }
-            }.start();
+            handleOutgoingSms(intent);
         }
         else if (ACTION_INCOMING_VOICE.equals(intent.getAction())) {
-            if (null == settings.getString("account", null))
-                return ret;
             startRefresh(true);
         }
         else if (ACCOUNT_CHANGED.equals(intent.getAction())) {
-            new Thread() {
-                @Override
-                public void run() {
-                    try {
-                        fetchRnrSe(getAuthToken(settings.getString("account", null)));
-                    }
-                    catch (Exception e) {
-                    }
-                }
-            }.start();
+            try {
+                String authToken = getAuthToken(account);
+                fetchRnrSe(authToken);
+            }
+            catch (Exception e) {
+                Log.w(LOGTAG, "Exception fetchRnrSe", e);
+            }
         }
-        return ret;
     }
 
     public static final String ACCOUNT_CHANGED = VoicePlusService.class.getPackage().getName() + ".ACCOUNT_CHANGED";
@@ -188,6 +166,7 @@ public class VoicePlusService extends Service {
                     si.send();
                 }
                 catch (Exception e) {
+                    Log.w(LOGTAG, "Error marking failed intent", e);
                 }
             }
         }
@@ -203,6 +182,7 @@ public class VoicePlusService extends Service {
                     si.send(Activity.RESULT_OK);
                 }
                 catch (Exception e) {
+                    Log.w(LOGTAG, "Error marking success intent", e);
                 }
             }
         }
@@ -243,7 +223,7 @@ public class VoicePlusService extends Service {
             Log.e(LOGTAG, "Error verifying GV SMS forwarding", e);
         }
 
-        settings.edit()
+        getSettings().edit()
         .putString("_rnr_se", rnrse)
         .apply();
     }
@@ -265,8 +245,8 @@ public class VoicePlusService extends Service {
     // send an outgoing sms event via google voice
     public void onSendMultipartText(String destAddr, String scAddr, List<String> texts, final List<PendingIntent> sentIntents, final List<PendingIntent> deliveryIntents, boolean multipart) {
         // grab the account and wacko opaque routing token thing
-        String rnrse = settings.getString("_rnr_se", null);
-        String account = settings.getString("account", null);
+        String rnrse = getSettings().getString("_rnr_se", null);
+        String account = getSettings().getString("account", null);
         String authToken;
 
         try {
@@ -275,7 +255,7 @@ public class VoicePlusService extends Service {
 
             if (rnrse == null) {
                 fetchRnrSe(authToken);
-                rnrse = settings.getString("_rnr_se", null);
+                rnrse = getSettings().getString("_rnr_se", null);
             }
         }
         catch (Exception e) {
@@ -306,7 +286,7 @@ public class VoicePlusService extends Service {
         try {
             // on failure, fetch info and try again
             fetchRnrSe(authToken);
-            rnrse = settings.getString("_rnr_se", null);
+            rnrse = getSettings().getString("_rnr_se", null);
             sendRnrSe(authToken, rnrse, destAddr, text);
             addRecent(text);
             success(sentIntents);
@@ -325,7 +305,7 @@ public class VoicePlusService extends Service {
                     public void onHeaders(RawHeaders headers) {
                         if (headers.getResponseCode() == 401) {
                             AccountManager.get(VoicePlusService.this).invalidateAuthToken("com.google", authToken);
-                            settings.edit().remove("_rnr_se").apply();
+                            getSettings().edit().remove("_rnr_se").apply();
                         }
                     }
                 })
@@ -350,7 +330,7 @@ public class VoicePlusService extends Service {
             public void onHeaders(RawHeaders headers) {
                 if (headers.getResponseCode() == 401) {
                     AccountManager.get(VoicePlusService.this).invalidateAuthToken("com.google", authToken);
-                    settings.edit().remove("_rnr_se").commit();
+                    getSettings().edit().remove("_rnr_se").commit();
                 }
             }
         })
@@ -457,7 +437,7 @@ public class VoicePlusService extends Service {
 
     // refresh the messages that were on the server
     synchronized void refreshMessages() throws Exception {
-        String account = settings.getString("account", null);
+        String account = getSettings().getString("account", null);
         if (account == null)
             return;
 
@@ -473,7 +453,7 @@ public class VoicePlusService extends Service {
                         if (headers.getResponseCode() == 401) {
                             Log.e(LOGTAG, "Refresh failed:\n" + headers.toHeaderString());
                             AccountManager.get(VoicePlusService.this).invalidateAuthToken("com.google", authToken);
-                            settings.edit().remove("_rnr_se").apply();
+                            getSettings().edit().remove("_rnr_se").apply();
                         }
                     }
                 })
@@ -494,7 +474,7 @@ public class VoicePlusService extends Service {
             }
         });
 
-        long timestamp = settings.getLong("timestamp", 0);
+        long timestamp = getSettings().getLong("timestamp", 0);
         boolean first = timestamp == 0;
         long max = timestamp;
         for (Message message: all) {
@@ -528,7 +508,7 @@ public class VoicePlusService extends Service {
             markReadIfNeeded(message);
 
         }
-        settings.edit()
+        getSettings().edit()
         .putLong("timestamp", max)
         .apply();
     }
@@ -547,11 +527,11 @@ public class VoicePlusService extends Service {
             Cursor c = getContentResolver().query(uri, null, "date = ? AND body = ?",
                     new String[] { String.valueOf(message.date), message.message }, null);
             try {
-                final String authToken = getAuthToken(settings.getString("account", null));
-                String rnrse = settings.getString("_rnr_se", null);
+                final String authToken = getAuthToken(getSettings().getString("account", null));
+                String rnrse = getSettings().getString("_rnr_se", null);
                 if (rnrse == null) {
                     fetchRnrSe(authToken);
-                    rnrse = settings.getString("_rnr_se", null);
+                    rnrse = getSettings().getString("_rnr_se", null);
                 }
                 if(c.moveToFirst()){
                     markRnrSe(authToken, rnrse, message.id, message.read);
@@ -569,17 +549,12 @@ public class VoicePlusService extends Service {
     synchronized void startRefresh(boolean force) {
         long now = new Date().getTime();
         if (force || now - lastRun > runDelta) {
-            new Thread() {
-                @Override
-                public void run() {
-                    try {
-                        refreshMessages();
-                    }
-                    catch (Exception e) {
-                        Log.e(LOGTAG, "Error refreshing messages", e);
-                    }
-                }
-            }.start();
+            try {
+                refreshMessages();
+            }
+            catch (Exception e) {
+                Log.e(LOGTAG, "Error refreshing messages", e);
+            }
             lastRun = now;
         }
     }
