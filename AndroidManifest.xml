@@ -37,9 +37,19 @@
             </intent-filter>
         </activity>
 
-        <service android:name="org.cyanogenmod.voiceplus.VoicePlusService">
-        </service>
+        <service android:name="org.cyanogenmod.voiceplus.VoicePlusService" />
 
+        <receiver android:name="com.runnirr.xvoiceplus.OutgoingSmsReceiver">
+            <intent-filter>
+                <action android:name="com.runnirr.xvoiceplus.OUTGOING_SMS" />
+            </intent-filter>
+        </receiver>
+        <receiver android:name="com.runnirr.xvoiceplus.IncomingGvReceiver">
+            <intent-filter>
+                <action android:name="com.runnirr.xvoiceplus.INCOMING_VOICE" />
+            </intent-filter>
+        </receiver>
+        
         <receiver android:name="org.cyanogenmod.voiceplus.PackageChangeReceiver">
             <intent-filter>
                 <data android:scheme="package"/>

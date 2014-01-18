@@ -14,9 +14,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 
-import org.cyanogenmod.voiceplus.Helper;
-import org.cyanogenmod.voiceplus.VoicePlusService;
-
 import android.annotation.TargetApi;
 import android.app.AndroidAppHelper;
 import android.app.AppOpsManager;
@@ -38,37 +35,35 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;
 public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit {
     private static final String TAG = "XVoicePlus";
 
+    public static final String GOOGLE_VOICE_PACKAGE = "com.google.android.apps.googlevoice";
     private static final String XVOICE_PLUS_PACKAGE = "com.runnirr.xvoiceplus";
+
     private static final String PERM_BROADCAST_SMS = "android.permission.BROADCAST_SMS";
 
     private boolean HOOKED_GV = false;
 
     private SharedPreferences mSettings;
-    private Class<?> xvoicePlusClass;
 
     @Override
     public void handleLoadPackage(LoadPackageParam lpparam) throws ClassNotFoundException {
-        if (lpparam.packageName.equals(Helper.GOOGLE_VOICE_PACKAGE)) {
+        if (lpparam.packageName.equals(GOOGLE_VOICE_PACKAGE)) {
             hookGoogleVoice(lpparam);
-        }
-        if (lpparam.packageName.equals(XVOICE_PLUS_PACKAGE)) {
-            xvoicePlusClass = lpparam.getClass();
         }
     }
 
     private void hookGoogleVoice(LoadPackageParam lpparam) {
         if (!HOOKED_GV){
-            findAndHookMethod(Helper.GOOGLE_VOICE_PACKAGE + ".PushNotificationReceiver", lpparam.classLoader,
+            findAndHookMethod(GOOGLE_VOICE_PACKAGE + ".PushNotificationReceiver", lpparam.classLoader,
                     "onReceive", Context.class, Intent.class,
                     new XC_MethodHook() {
                 @Override
                 protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
                     Log.d(TAG, "Received incoming Google Voice notification");
-                    Context c = (Context) param.args[0];
-                    Intent incomingGvIntent = new Intent(c, xvoicePlusClass)
-                            .setAction(VoicePlusService.ACTION_INCOMING_VOICE);
+                    Context context = (Context) param.args[0];
+                    Intent incomingGvIntent = new Intent()
+                            .setAction(IncomingGvReceiver.INCOMING_VOICE);
 
-                    c.startService(incomingGvIntent);
+                    context.sendOrderedBroadcast(incomingGvIntent, null);
                 }
             });
             HOOKED_GV= true;
@@ -113,13 +108,12 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
             @Override
             protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                 if(param.getThrowable() != null) {
-                    param.setThrowable(null);
                     SmsMessage result = (SmsMessage) callStaticMethod(SmsMessage.class, "createFromPdu", param.args[0], SmsUtils.FORMAT_3GPP);
+                    param.setThrowable(null);
                     param.setResult(result);
                 }
             }
         });
-
     }
 
     private void hookXVoicePlusPermission(){
@@ -208,15 +202,15 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
 
             Context context = getContext();
             if (context != null) {
-                Intent outgoingSms = new Intent(context, xvoicePlusClass)
-                        .setAction(VoicePlusService.NEW_OUTGOING_SMS)
+                Intent outgoingSms = new Intent()
+                        .setAction(OutgoingSmsReceiver.OUTGOING_SMS)
                         .putExtra("destAddr", destAddr)
                         .putExtra("scAddr", scAddr)
                         .putStringArrayListExtra("parts", texts)
                         .putParcelableArrayListExtra("sentIntents", sentIntents)
                         .putParcelableArrayListExtra("deliveryIntents", deliveryIntents);
 
-                context.startService(outgoingSms);
+                context.sendOrderedBroadcast(outgoingSms, null);
                 return true;
 
             } else {

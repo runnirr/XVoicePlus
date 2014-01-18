@@ -7,15 +7,11 @@ import android.accounts.OperationCanceledException;
 import android.app.Activity;
 import android.app.IntentService;
 import android.app.PendingIntent;
-import android.content.BroadcastReceiver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.database.Cursor;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.telephony.PhoneNumberUtils;
@@ -28,6 +24,8 @@ import com.google.gson.annotations.SerializedName;
 import com.koushikdutta.async.http.libcore.RawHeaders;
 import com.koushikdutta.ion.HeadersCallback;
 import com.koushikdutta.ion.Ion;
+import com.runnirr.xvoiceplus.IncomingGvReceiver;
+import com.runnirr.xvoiceplus.OutgoingSmsReceiver;
 import com.runnirr.xvoiceplus.SmsUtils;
 
 import java.io.IOException;
@@ -45,40 +43,20 @@ import java.util.concurrent.ExecutionException;
  * Created by koush on 7/5/13.
  */
 public class VoicePlusService extends IntentService {
-    public static final String ACTION_INCOMING_VOICE = "com.runnirr.xvoiceplus.INCOMING_VOICE";
-    public static final String NEW_OUTGOING_SMS = "com.runnnirr.xvoiceplus.NEW_OUTGOING_SMS";
-
     private static final String LOGTAG = "VoicePlusService";
-
-    final BroadcastReceiver mConnectivityReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            // refresh inbox if connectivity returns
-            if (intent.getBooleanExtra(ConnectivityManager.EXTRA_NO_CONNECTIVITY, false))
-                return;
-            ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-            NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-            if (activeNetworkInfo != null)
-                startRefresh(false);
-        }
-    };
     
     public VoicePlusService() {
         this("XVoicePlusService");
     }
-    
-    
+
     public VoicePlusService(String name) {
         super(name);
-
-//        IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
-//        registerReceiver(mConnectivityReceiver, filter);
     }
-    
+
     private SharedPreferences getSettings() {
         return getSharedPreferences("settings", MODE_PRIVATE);
     }
-    
+
     public boolean canDeliverToAddress(Intent intent) {
         String address = intent.getStringExtra("destAddr");
 
@@ -128,19 +106,15 @@ public class VoicePlusService extends IntentService {
     @Override
     protected void onHandleIntent(final Intent intent) {
         final String account = getSettings().getString("account", null);
-        if (account == null) {
-            stopSelf();
+        if (account == null || intent == null) {
             return;
         }
-
-        if (intent == null)
-            return;
 
         // handle an outgoing sms
-        if (NEW_OUTGOING_SMS.equals(intent.getAction())) {
+        if (OutgoingSmsReceiver.OUTGOING_SMS.equals(intent.getAction())) {
             handleOutgoingSms(intent);
         }
-        else if (ACTION_INCOMING_VOICE.equals(intent.getAction())) {
+        else if (IncomingGvReceiver.INCOMING_VOICE.equals(intent.getAction())) {
             startRefresh(true);
         }
         else if (ACCOUNT_CHANGED.equals(intent.getAction())) {
@@ -274,7 +248,7 @@ public class VoicePlusService extends IntentService {
         try {
             // send it off, and note that we recently sent this message
             // for round trip tracking
-            sendRnrSe(authToken, rnrse, destAddr, text);
+            sendGvMessage(authToken, rnrse, destAddr, text);
             addRecent(text);
             success(sentIntents);
             return;
@@ -287,7 +261,7 @@ public class VoicePlusService extends IntentService {
             // on failure, fetch info and try again
             fetchRnrSe(authToken);
             rnrse = getSettings().getString("_rnr_se", null);
-            sendRnrSe(authToken, rnrse, destAddr, text);
+            sendGvMessage(authToken, rnrse, destAddr, text);
             addRecent(text);
             success(sentIntents);
         }
@@ -298,7 +272,7 @@ public class VoicePlusService extends IntentService {
     }
 
     // hit the google voice api to send a text
-    void sendRnrSe(final String authToken, String rnrse, String number, String text) throws Exception {
+    void sendGvMessage(final String authToken, String rnrse, String number, String text) throws Exception {
         JsonObject json = Ion.with(this, "https://www.google.com/voice/sms/send/")
                 .onHeaders(new HeadersCallback() {
                     @Override
@@ -321,7 +295,7 @@ public class VoicePlusService extends IntentService {
             throw new Exception(json.toString());
     }
 
-    void markRnrSe(final String authToken, String rnrse, String id, int read) throws Exception {
+    void markGvMessageRead(final String authToken, String rnrse, String id, int read) throws Exception {
         // id - GV messages id
         // read - 0 = unread, 1 = read
         Ion.with(this, "https://www.google.com/voice/inbox/mark/")
@@ -384,7 +358,7 @@ public class VoicePlusService extends IntentService {
     private static final Uri URI_SENT = Uri.parse("content://sms/sent");
     private static final Uri URI_RECEIVED = Uri.parse("content://sms/inbox");
 
-    synchronized boolean messageExists(Message m, Uri uri) {
+    boolean messageExists(Message m, Uri uri) {
         Cursor c = getContentResolver().query(uri, null, "date = ? AND body = ?",
                 new String[] { String.valueOf(m.date), m.message }, null);
         try {
@@ -400,7 +374,7 @@ public class VoicePlusService extends IntentService {
     // we do this in the case of outgoing messages
     // that were not sent via this phone, and also on initial
     // message sync.
-    synchronized void insertMessage(Message m) {
+    void insertMessage(Message m) {
         Uri uri;
         int type;
         if (m.type == VOICE_INCOMING_SMS) {
@@ -425,7 +399,7 @@ public class VoicePlusService extends IntentService {
         }
     }
 
-    synchronized void synthesizeMessage(Message m) {
+    void synthesizeMessage(Message m) {
         if (!messageExists(m, URI_RECEIVED)){
             try{
                 SmsUtils.createFakeSms(this, m.phoneNumber, m.message, m.date);
@@ -436,7 +410,7 @@ public class VoicePlusService extends IntentService {
     }
 
     // refresh the messages that were on the server
-    synchronized void refreshMessages() throws Exception {
+    void refreshMessages() throws Exception {
         String account = getSettings().getString("account", null);
         if (account == null)
             return;
@@ -534,7 +508,7 @@ public class VoicePlusService extends IntentService {
                     rnrse = getSettings().getString("_rnr_se", null);
                 }
                 if(c.moveToFirst()){
-                    markRnrSe(authToken, rnrse, message.id, message.read);
+                    markGvMessageRead(authToken, rnrse, message.id, message.read);
                 }
             } catch (Exception e) {
                 Log.w(LOGTAG, "Error marking message as read. ID: " + message.id);
@@ -546,7 +520,7 @@ public class VoicePlusService extends IntentService {
 
     private volatile long lastRun = 0L;
     private final long runDelta = 5000L; // Refresh no more than every 5 seconds
-    synchronized void startRefresh(boolean force) {
+    void startRefresh(boolean force) {
         long now = new Date().getTime();
         if (force || now - lastRun > runDelta) {
             try {

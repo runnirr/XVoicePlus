@@ -1,11 +1,15 @@
 package org.cyanogenmod.voiceplus;
 
+import com.runnirr.xvoiceplus.R;
+import com.runnirr.xvoiceplus.XVoicePlus;
+
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.util.Log;
+import android.widget.Toast;
 
 /**
  * Created by koush on 7/17/13.
@@ -26,7 +30,7 @@ public class PackageChangeReceiver extends BroadcastReceiver {
 
         int ENABLED_STATE;
         try {
-            pm.getPackageInfo(Helper.GOOGLE_VOICE_PACKAGE, 0);
+            pm.getPackageInfo(XVoicePlus.GOOGLE_VOICE_PACKAGE, 0);
             ENABLED_STATE =  PackageManager.COMPONENT_ENABLED_STATE_ENABLED;
         }
         catch (Exception e) {
@@ -34,5 +38,7 @@ public class PackageChangeReceiver extends BroadcastReceiver {
         }
 
         pm.setComponentEnabledSetting(activity, ENABLED_STATE, 0);
+
+        Toast.makeText(context, context.getResources().getString(R.string.xvoiceplus_started), Toast.LENGTH_LONG).show();
     }
 }
