@@ -39,6 +39,8 @@ public class PackageChangeReceiver extends BroadcastReceiver {
 
         pm.setComponentEnabledSetting(activity, ENABLED_STATE, 0);
 
-        Toast.makeText(context, context.getResources().getString(R.string.xvoiceplus_started), Toast.LENGTH_LONG).show();
+        if (intent.getAction().equals("android.intent.action.BOOT_COMPLETED")) {
+            Toast.makeText(context, context.getResources().getString(R.string.xvoiceplus_started), Toast.LENGTH_LONG).show();
+        }
     }
 }

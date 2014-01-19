@@ -113,9 +113,11 @@ public class VoicePlusService extends IntentService {
         // handle an outgoing sms
         if (OutgoingSmsReceiver.OUTGOING_SMS.equals(intent.getAction())) {
             handleOutgoingSms(intent);
+            OutgoingSmsReceiver.completeWakefulIntent(intent);
         }
         else if (IncomingGvReceiver.INCOMING_VOICE.equals(intent.getAction())) {
             startRefresh(true);
+            IncomingGvReceiver.completeWakefulIntent(intent);
         }
         else if (ACCOUNT_CHANGED.equals(intent.getAction())) {
             try {
