@@ -33,10 +33,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.PriorityQueue;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -113,6 +115,7 @@ public class VoicePlusService extends IntentService {
         // handle an outgoing sms
         if (OutgoingSmsReceiver.OUTGOING_SMS.equals(intent.getAction())) {
             handleOutgoingSms(intent);
+            startRefresh(false);
             OutgoingSmsReceiver.completeWakefulIntent(intent);
         }
         else if (IncomingGvReceiver.INCOMING_VOICE.equals(intent.getAction())) {
@@ -206,11 +209,26 @@ public class VoicePlusService extends IntentService {
 
     // mark an outgoing text as recently sent, so if it comes in via
     // round trip, we ignore it.
-    PriorityQueue<String> recentSent = new PriorityQueue<String>();
+    private final Object recentLock = new Object();
     private void addRecent(String text) {
-        while (recentSent.size() > 20)
-            recentSent.remove();
-        recentSent.add(text);
+        synchronized(recentLock) {
+            SharedPreferences settings = getSettings();
+            Set<String> recentMessage = settings.getStringSet("recent", new HashSet<String>());
+            recentMessage.add(text);
+            settings.edit().putStringSet("recent", recentMessage).apply();
+        }
+    }
+
+    private boolean removeRecent(String text) {
+        synchronized(recentLock) {
+            SharedPreferences settings = getSettings();
+            Set<String> recentMessage = settings.getStringSet("recent", new HashSet<String>());
+            if (recentMessage.remove(text)) {
+                settings.edit().putStringSet("recent", recentMessage).apply();
+                return true;
+            }
+            return false;
+        }
     }
 
     public String getAuthToken(String account) throws IOException, OperationCanceledException, AuthenticatorException {
@@ -263,8 +281,10 @@ public class VoicePlusService extends IntentService {
             // on failure, fetch info and try again
             fetchRnrSe(authToken);
             rnrse = getSettings().getString("_rnr_se", null);
-            sendGvMessage(authToken, rnrse, destAddr, text);
-            addRecent(text);
+            synchronized (recentLock) {
+                sendGvMessage(authToken, rnrse, destAddr, text);
+                addRecent(text);
+            }
             success(sentIntents);
         }
         catch (Exception e) {
@@ -297,9 +317,15 @@ public class VoicePlusService extends IntentService {
             throw new Exception(json.toString());
     }
 
+    /**
+     * Update the read state on GV
+     * @param authToken
+     * @param rnrse
+     * @param id - GV message id
+     * @param read - 0 = unread, 1 = read
+     * @throws Exception
+     */
     void markGvMessageRead(final String authToken, String rnrse, String id, int read) throws Exception {
-        // id - GV messages id
-        // read - 0 = unread, 1 = read
         Ion.with(this, "https://www.google.com/voice/inbox/mark/")
         .onHeaders(new HeadersCallback() {
             @Override
@@ -437,9 +463,15 @@ public class VoicePlusService extends IntentService {
                 .as(Payload.class)
                 .get();
 
-        ArrayList<Message> all = new ArrayList<Message>();
+
+        long timestamp = getSettings().getLong("timestamp", 0);
+        LinkedList<Message> all = new LinkedList<Message>();
         for (Conversation conversation: payload.conversations) {
-            all.addAll(conversation.messages);
+            for (Message m : conversation.messages) {
+                if (m.date > timestamp) {
+                    all.add(m);
+                }
+            }
         }
 
         // sort by date order so the events get added in the same order
@@ -450,8 +482,6 @@ public class VoicePlusService extends IntentService {
             }
         });
 
-        long timestamp = getSettings().getLong("timestamp", 0);
-        boolean first = timestamp == 0;
         long max = timestamp;
         for (Message message: all) {
             max = Math.max(max, message.date);
@@ -464,26 +494,26 @@ public class VoicePlusService extends IntentService {
 
             // on first sync, just populate the mms provider...
             // don't send any broadcasts.
-            if (first) {
+            if (timestamp == 0) {
                 insertMessage(message);
                 continue;
             }
 
             // sync up outgoing messages
             if (message.type == VOICE_OUTGOING_SMS) {
-                boolean found = recentSent.contains(message.message);
-                if (found) {
-                    recentSent.remove(message.message);
-                } else {
+                if (!removeRecent(message.message)) {
                     insertMessage(message);
+                    Log.d(LOGTAG, "Inserted message " + message.message);
+                } else {
+                    Log.d(LOGTAG, "Removed message " +message.message);
                 }
             } else if (message.type == VOICE_INCOMING_SMS) {
                 synthesizeMessage(message);
             }
 
             markReadIfNeeded(message);
-
         }
+
         getSettings().edit()
         .putLong("timestamp", max)
         .apply();
@@ -510,7 +540,7 @@ public class VoicePlusService extends IntentService {
                     rnrse = getSettings().getString("_rnr_se", null);
                 }
                 if(c.moveToFirst()){
-                    markGvMessageRead(authToken, rnrse, message.id, message.read);
+                    markGvMessageRead(authToken, rnrse, message.id, 1);
                 }
             } catch (Exception e) {
                 Log.w(LOGTAG, "Error marking message as read. ID: " + message.id);
@@ -521,7 +551,7 @@ public class VoicePlusService extends IntentService {
     }
 
     private volatile long lastRun = 0L;
-    private final long runDelta = 5000L; // Refresh no more than every 5 seconds
+    private final long runDelta = 60 * 1000L; // Refresh no more than every 60 seconds
     void startRefresh(boolean force) {
         long now = new Date().getTime();
         if (force || now - lastRun > runDelta) {

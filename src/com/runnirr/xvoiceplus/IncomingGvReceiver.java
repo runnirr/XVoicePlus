@@ -14,6 +14,7 @@ public class IncomingGvReceiver extends WakefulBroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         intent.setClass(context, VoicePlusService.class);
         startWakefulService(context, intent);
+        abortBroadcast();
     }
 
 }
