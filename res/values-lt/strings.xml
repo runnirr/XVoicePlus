@@ -15,8 +15,8 @@
 -->
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="app_name">Voice+</string>
-    <string name="enable_voice_plus">Įjungti Voice+ nuo CyanogenMod</string>
-    <string name="info">Voice+ leidžia visoms programoms siųsti SMS pranešimus per Google Voice</string>
+    <string name="enable_voice_plus">"Įjungti Voice+ nuo „CyanogenMod“"</string>
+    <string name="info">"Voice+ leidžia visoms programoms siųsti SMS pranešimus per „Google Voice“"</string>
     <string name="disable">Išjungti</string>
     <string name="account">Paskyra</string>
     <string name="not_granted">Leidimas nesuteiktas:\n%s</string>
