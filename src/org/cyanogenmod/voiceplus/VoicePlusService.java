@@ -8,7 +8,6 @@ import android.app.Activity;
 import android.app.IntentService;
 import android.app.PendingIntent;
 import android.content.ContentValues;
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
@@ -36,7 +35,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -59,50 +57,17 @@ public class VoicePlusService extends IntentService {
         return getSharedPreferences("settings", MODE_PRIVATE);
     }
 
-    public boolean canDeliverToAddress(Intent intent) {
-        String address = intent.getStringExtra("destAddr");
-
-        if (address == null) {
-            Log.w(LOGTAG, "address is null");
-            return false;
-        }
-        if (address.startsWith("+") && !address.startsWith("+1")) {
-            Log.w(LOGTAG, "address starts with a + but not +1");
-            return false;
-        }
-
-        TelephonyManager tm = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-        String country = tm.getNetworkCountryIso();
-        if (country == null)
-            country = tm.getSimCountryIso();
-        if (country == null) {
-            Log.w(LOGTAG, "Couldn't get country info. Looking for +1 or <= 10 digits");
-            return address.startsWith("+1") || address.length() <= 10;
-        }
-
-        if (!country.toUpperCase(Locale.US).equals("US") && !address.startsWith("+1")) {
-            Log.w(LOGTAG, "Phone indicates you are outside of the US");
-            return false;
-        }
-
-        return true;
-    }
-
     // parse out the intent extras from android.intent.action.NEW_OUTGOING_SMS
     // and send it off via google voice
     void handleOutgoingSms(Intent intent) {
-        if (canDeliverToAddress(intent)){
-            boolean multipart = intent.getBooleanExtra("multipart", false);
-            String destAddr = intent.getStringExtra("destAddr");
-            String scAddr = intent.getStringExtra("scAddr");
-            ArrayList<String> parts = intent.getStringArrayListExtra("parts");
-            ArrayList<PendingIntent> sentIntents = intent.getParcelableArrayListExtra("sentIntents");
-            ArrayList<PendingIntent> deliveryIntents = intent.getParcelableArrayListExtra("deliveryIntents");
+        boolean multipart = intent.getBooleanExtra("multipart", false);
+        String destAddr = intent.getStringExtra("destAddr");
+        String scAddr = intent.getStringExtra("scAddr");
+        ArrayList<String> parts = intent.getStringArrayListExtra("parts");
+        ArrayList<PendingIntent> sentIntents = intent.getParcelableArrayListExtra("sentIntents");
+        ArrayList<PendingIntent> deliveryIntents = intent.getParcelableArrayListExtra("deliveryIntents");
 
-            onSendMultipartText(destAddr, scAddr, parts, sentIntents, deliveryIntents, multipart);
-        } else {
-            Log.w(LOGTAG, "Unable to send via GV. Falling back to carrier.");
-        }
+        onSendMultipartText(destAddr, scAddr, parts, sentIntents, deliveryIntents, multipart);
     }
 
     @Override
