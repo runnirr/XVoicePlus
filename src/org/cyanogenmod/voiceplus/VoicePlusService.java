@@ -5,6 +5,7 @@ import android.accounts.AccountManager;
 import android.accounts.AuthenticatorException;
 import android.accounts.OperationCanceledException;
 import android.app.Activity;
+import android.app.AppOpsManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
@@ -484,6 +485,10 @@ public class VoicePlusService extends Service {
 
         // tokens!
         final String authToken = getAuthToken(account);
+
+        AppOpsManager appOps = (AppOpsManager)getSystemService(APP_OPS_SERVICE);
+        appOps.setMode(AppOpsManager.OP_WRITE_SMS, getApplicationInfo().uid,
+            getPackageName(), AppOpsManager.MODE_ALLOWED);
 
         Payload payload = Ion.with(this)
         .load("https://www.google.com/voice/request/messages")
