@@ -4,7 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Calendar;
-import java.util.GregorianCalendar;
 
 import android.content.Context;
 import android.content.Intent;
@@ -20,13 +19,11 @@ public class SmsUtils {
 
     public static void createFakeSms(Context context, String sender, String body, long date) throws IOException {
         byte[] pdu = null;
-        byte[] scBytes = PhoneNumberUtils
-                .networkPortionToCalledPartyBCD("0000000000");
-        byte[] senderBytes = PhoneNumberUtils
-                .networkPortionToCalledPartyBCD(sender);
+        byte[] scBytes = PhoneNumberUtils.networkPortionToCalledPartyBCD("0000000000");
+        byte[] senderBytes = PhoneNumberUtils.networkPortionToCalledPartyBCD(sender);
         int lsmcs = scBytes.length;
         byte[] dateBytes = new byte[7];
-        Calendar calendar = new GregorianCalendar();
+        Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(date);
         dateBytes[0] = reverseByte((byte) (calendar.get(Calendar.YEAR)));
         dateBytes[1] = reverseByte((byte) (calendar.get(Calendar.MONTH) + 1));
@@ -56,29 +53,30 @@ public class SmsUtils {
                 String sReflectedClassName = "com.android.internal.telephony.GsmAlphabet";
                 Class<?> cReflectedNFCExtras = Class.forName(sReflectedClassName);
                 Method stringToGsm7BitPacked = cReflectedNFCExtras.getMethod(
-                        "stringToGsm7BitPacked", new Class[] { String.class });
+                        "stringToGsm7BitPacked", String.class);
                 stringToGsm7BitPacked.setAccessible(true);
                 byte[] bodybytes = (byte[]) stringToGsm7BitPacked.invoke(null, body);
                 bo.write(bodybytes);
             } catch (Exception e) {
+                Log.e(TAG, "Reflection error creating pdu", e);
             }
 
             pdu = bo.toByteArray();
-        } catch (IOException e) {
         } finally {
-            if (bo != null) {
-                bo.close();
-            }
+            bo.close();
         }
 
         Log.d(TAG, "Creating fake sms. Broadcasting...");
-        String action = "android.provider.Telephony.SMS_RECEIVED";
+        String action;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             action = "android.provider.Telephony.SMS_DELIVER";
+        } else {
+            action = "android.provider.Telephony.SMS_RECEIVED";
         }
 
         Intent intent = new Intent();
         intent.setAction(action);
+        intent.setFlags(0);
         intent.putExtra("pdus", new Object[] { pdu });
         intent.putExtra("format", FORMAT_3GPP);
         context.sendOrderedBroadcast(intent, "android.permission.RECEIVE_SMS");
@@ -87,5 +85,4 @@ public class SmsUtils {
     private static byte reverseByte(byte b) {
         return (byte) ((b & 0xF0) >> 4 | (b & 0x0F) << 4);
     }
-
 }

@@ -23,6 +23,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.XResources;
 import android.os.Build;
+import android.telephony.SmsManager;
 import android.telephony.SmsMessage;
 import android.util.Log;
 import de.robv.android.xposed.IXposedHookLoadPackage;
@@ -103,11 +104,12 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
     }
 
     private void hookSmsMessage(){
-        findAndHookMethod(android.telephony.SmsMessage.class, "createFromPdu", byte[].class, new XC_MethodHook() {
+        findAndHookMethod(SmsMessage.class, "createFromPdu", byte[].class, new XC_MethodHook() {
 
             @Override
             protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                 if(param.getThrowable() != null) {
+                    Log.w(TAG, "Error parsing pdu in default format. Now trying GSM 3GPP");
                     SmsMessage result = (SmsMessage) callStaticMethod(SmsMessage.class, "createFromPdu", param.args[0], SmsUtils.FORMAT_3GPP);
                     param.setThrowable(null);
                     param.setResult(result);
@@ -150,11 +152,11 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
 
 
     private void hookSendSms(){
-        findAndHookMethod(findClass("android.telephony.SmsManager", null), "sendTextMessage",
+        findAndHookMethod(SmsManager.class, "sendTextMessage",
                 String.class, String.class, String.class, PendingIntent.class, PendingIntent.class,
                 new XSmsMethodHook());
 
-        findAndHookMethod(findClass("android.telephony.SmsManager", null), "sendMultipartTextMessage",
+        findAndHookMethod(SmsManager.class, "sendMultipartTextMessage",
                 String.class, String.class, ArrayList.class, ArrayList.class, ArrayList.class,
                 new XSmsMethodHook());
     }
