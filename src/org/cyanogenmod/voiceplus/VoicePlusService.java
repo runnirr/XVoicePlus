@@ -13,6 +13,7 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.telephony.PhoneNumberUtils;
 import android.telephony.TelephonyManager;
 import android.util.Log;
@@ -54,7 +55,7 @@ public class VoicePlusService extends IntentService {
     }
 
     private SharedPreferences getSettings() {
-        return getSharedPreferences("settings", MODE_PRIVATE);
+        return PreferenceManager.getDefaultSharedPreferences(this);
     }
 
     // parse out the intent extras from android.intent.action.NEW_OUTGOING_SMS

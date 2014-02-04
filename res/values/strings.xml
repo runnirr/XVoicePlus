@@ -26,17 +26,21 @@
     <string name="outgoing_carrier">Send via carrier</string>
     <string name="outgoing_voice">Send via Google Voice</string>
     <string name="outgoing_prompt">Prompt on outgoing messages</string>
+    <string-array name="outbound_prompt_choices">
+        <item name="prompt_carrier">Send via carrier</item>
+        <item name="prompt_google_voice">Send via Google Voice</item>
+    </string-array>
 
     <string-array name="outbound_settings_choices">
         <item name="outgoing_carrier">@string/outgoing_carrier</item>
         <item name="outgoing_voice">@string/outgoing_voice</item>
-        <item name="outgoing_prompt">@string/outgoing_prompt</item>
+        <!-- <item name="outgoing_prompt">@string/outgoing_prompt</item> -->
     </string-array>
     <string name="outgoing_settings_default_value">0</string>
     <string-array name="outbound_settings_values">
         <item name="outgoing_carrier">0</item>
         <item name="outgoing_voice">1</item>
-        <item name="outgoing_prompt">2</item>
+        <!-- <item name="outgoing_prompt">2</item> -->
     </string-array>
 
 </resources>

@@ -9,7 +9,7 @@
 
     <com.runnirr.xvoiceplus.AccountListPreferences
         android:dependency="settings_enabled"
-        android:key="settings_account"
+        android:key="account"
         android:title="@string/account"
         android:persistent="true"/>
 

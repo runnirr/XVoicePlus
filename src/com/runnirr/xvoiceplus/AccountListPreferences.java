@@ -73,7 +73,7 @@ public class AccountListPreferences extends ListPreference {
                     Log.e(TAG, "error invalidating token", e);
                 }
             }
-        }.start();    
+        }.start();
     }
 
     private void getToken(final Account account) {

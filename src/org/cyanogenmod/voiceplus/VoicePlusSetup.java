@@ -24,7 +24,7 @@ public class VoicePlusSetup extends Activity implements OnSharedPreferenceChange
     public void onResume() {
         super.onResume();
         mVPFragment.getPreferenceScreen().getSharedPreferences()
-                .registerOnSharedPreferenceChangeListener(this);   
+                .registerOnSharedPreferenceChangeListener(this);
     }
 
     @Override
@@ -38,5 +38,4 @@ public class VoicePlusSetup extends Activity implements OnSharedPreferenceChange
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         mVPFragment.updateSummary(key);
     }
-   
 }

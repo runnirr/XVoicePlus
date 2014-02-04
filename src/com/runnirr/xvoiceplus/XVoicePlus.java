@@ -74,7 +74,7 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
     @Override
     public void initZygote(StartupParam startupParam) {
         XResources.setSystemWideReplacement("android", "bool", "config_sms_capable", true);
-        mSettings = new XSharedPreferences("com.runnirr.xvoiceplus", "settings");
+        mSettings = new XSharedPreferences("com.runnirr.xvoiceplus");
 
         hookSendSms();
         hookXVoicePlusPermission();
@@ -164,10 +164,24 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
     class XSmsMethodHook extends XC_MethodHook {
 
         @Override
-        protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-            if (!signedIn()){
+        protected void beforeHookedMethod(final MethodHookParam param) throws Throwable {
+            switch (getOutgoingStrategy()) {
+
+            // TODO: Find a way to make prompt work
+            case (R.string.outgoing_prompt):
+            case (R.string.outgoing_voice):
+                Log.d(TAG, "Sending via Google Voice based on settings");
+                attemptSendViaGoogleVoice(param);
+                return;
+            case (R.string.outgoing_carrier):
+            default:
+                // Stop the hooks and let it go through carrier
+                Log.d(TAG, "Sending via carrier based on settings");
                 return;
             }
+        }
+
+        private void attemptSendViaGoogleVoice(final MethodHookParam param) {
             String destAddr = (String) param.args[0];
             String scAddr = (String) param.args[1];
 
@@ -191,11 +205,15 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
             } else {
                 deliveryIntents = (ArrayList<PendingIntent>) param.args[4];
             }
-            if (sendText(destAddr, scAddr, texts, sentIntents, deliveryIntents)) {
-                // If we sent via Google Voice, stop the system from sending its sms
-                param.setResult(null);
-            } else {
-                Log.i(TAG, "Send text failed. Using regluar number");
+            try {
+                if (sendText(destAddr, scAddr, texts, sentIntents, deliveryIntents)) {
+                    // If we sent via Google Voice, stop the system from sending its sms
+                    param.setResult(null);
+                } else {
+                    Log.i(TAG, "Send text failed. Using regluar number");
+                }
+            } catch (IOException e) {
+                Log.e(TAG, "Error attempting to send message via Google Voice", e);
             }
         }
 
@@ -252,8 +270,22 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
         }
     }
 
-    private boolean signedIn() {
-        return mSettings.getString("account", null) != null;
+    private int getOutgoingStrategy() {
+        String outboundPref = mSettings.getString("settings_outbound_messages", "0");
+        if (!mSettings.getBoolean("settings_enabled", false) ||
+                mSettings.getString("account", null) == null ||
+                outboundPref.equals("0")) {
+            // Not enabled or no account selected, or selected to send via carrier
+            return R.string.outgoing_carrier;
+        } else if (outboundPref.equals("1")) {
+            // User selected to send via Google Voice
+            return R.string.outgoing_voice;
+        } else if (outboundPref.equals("2")) {
+            // User selected to prompt before sending
+            return R.string.outgoing_prompt;
+        } else {
+            // Default to carrier if something is wrong in the settings
+            return R.string.outgoing_carrier;
+        }
     }
-
 }
