@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <SwitchPreference
+        android:key="settings_enabled"
+        android:title="@string/settings_enable_toggle"
+        android:defaultValue="false"
+        android:persistent="true"
+        android:disableDependentsState="false"/>
+
+    <com.runnirr.xvoiceplus.AccountListPreferences
+        android:dependency="settings_enabled"
+        android:key="settings_account"
+        android:title="@string/account"
+        android:persistent="true"/>
+
+    <ListPreference
+        android:dependency="settings_enabled"
+        android:key="settings_outbound_messages"
+        android:title="@string/settings_outbound_message"
+        android:entries="@array/outbound_settings_choices"
+        android:entryValues="@array/outbound_settings_values"
+        android:defaultValue="@string/outgoing_settings_default_value"
+        android:persistent="true"/>
+</PreferenceScreen>

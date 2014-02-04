@@ -15,10 +15,28 @@
 -->
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="app_name">XVoice+</string>
-    <string name="enable_voice_plus">Activate Voice+ by CyanogenMod</string>
     <string name="info">XVoice+ enables all apps to send SMS messages through Google Voice</string>
-    <string name="disable">Disable</string>
+    <string name="disable">Disabled</string>
     <string name="account">Account</string>
     <string name="not_granted">Permission unavailable:\n%s</string>
     <string name="xvoiceplus_started">XVoice+ is now running. SMS messages will be sent through Google Voice.</string>
+    <string name="settings_enable_toggle">Enable XVoice+</string>
+    <string name="settings_outbound_message">Sending Messages</string>
+
+    <string name="outgoing_carrier">Send via carrier</string>
+    <string name="outgoing_voice">Send via Google Voice</string>
+    <string name="outgoing_prompt">Prompt on outgoing messages</string>
+
+    <string-array name="outbound_settings_choices">
+        <item name="outgoing_carrier">@string/outgoing_carrier</item>
+        <item name="outgoing_voice">@string/outgoing_voice</item>
+        <item name="outgoing_prompt">@string/outgoing_prompt</item>
+    </string-array>
+    <string name="outgoing_settings_default_value">0</string>
+    <string-array name="outbound_settings_values">
+        <item name="outgoing_carrier">0</item>
+        <item name="outgoing_voice">1</item>
+        <item name="outgoing_prompt">2</item>
+    </string-array>
+
 </resources>

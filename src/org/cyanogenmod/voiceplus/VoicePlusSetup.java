@@ -1,141 +1,42 @@
 package org.cyanogenmod.voiceplus;
 
-import com.runnirr.xvoiceplus.R;
+import com.runnirr.xvoiceplus.VoicePlusFragment;
 
-import android.accounts.Account;
-import android.accounts.AccountManager;
-import android.accounts.AccountManagerCallback;
-import android.accounts.AccountManagerFuture;
 import android.app.Activity;
-import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.os.Bundle;
-import android.os.Handler;
-import android.util.Log;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.CheckedTextView;
-import android.widget.ListView;
 
-public class VoicePlusSetup extends Activity {
-    class AccountAdapter extends ArrayAdapter<Account> {
-        AccountAdapter() {
-            super(VoicePlusSetup.this, android.R.layout.simple_list_item_single_choice);
-        }
+public class VoicePlusSetup extends Activity implements OnSharedPreferenceChangeListener {
 
-        @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-            View view = super.getView(position, convertView, parent);
-
-            CheckedTextView tv = (CheckedTextView) view.findViewById(android.R.id.text1);
-            Account account = getItem(position);
-            tv.setText(account.name);
-
-            return view;
-        }
-    }
-
-    Account NULL;
-
-    ListView lv;
-    AccountAdapter accountAdapter;
-    SharedPreferences settings;
+    private final VoicePlusFragment mVPFragment = new VoicePlusFragment();
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.main);
 
-        accountAdapter = new AccountAdapter();
-        settings = getSharedPreferences("settings", MODE_PRIVATE);
-
-        lv = (ListView) findViewById(R.id.list);
-        lv.setAdapter(accountAdapter = new AccountAdapter());
-
-        lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Account account = accountAdapter.getItem(position);
-
-                final String previousAccount = settings.getString("account", null);
-                new Thread() {
-                    @Override
-                    public void run() {
-                        invalidateToken(previousAccount);
-                    }
-                }.start();
-
-                if (account == NULL) {
-                    settings.edit().remove("account").remove("_rnr_se").commit();
-                    return;
-                }
-
-                lv.clearChoices();
-                lv.requestLayout();
-                getToken(account, position);
-            }
-        });
-
-        String selectedAccount = settings.getString("account", null);
-
-        NULL = new Account(getString(R.string.disable), "com.google");
-        accountAdapter.add(NULL);
-        int selected = 0;
-        for (Account account : AccountManager.get(this).getAccountsByType("com.google")) {
-            if (account.name.equals(selectedAccount))
-                selected = accountAdapter.getCount();
-            accountAdapter.add(account);
-        }
-
-        lv.setItemChecked(selected, true);
-        lv.requestLayout();
-
-        startService(new Intent(this, VoicePlusService.class));
+        getFragmentManager().beginTransaction()
+            .replace(android.R.id.content, mVPFragment)
+            .commit();
     }
 
-    void invalidateToken(String account) {
-        if (account == null)
-            return;
-
-        try {
-            // grab the auth token
-            Bundle bundle = AccountManager.get(this).getAuthToken(new Account(account, "com.google"), "grandcentral", null, true, null, null).getResult();
-            String authToken = bundle.getString(AccountManager.KEY_AUTHTOKEN);
-            AccountManager.get(this).invalidateAuthToken("com.google", authToken);
-            Log.i(LOGTAG, "Token invalidated.");
-        }
-        catch (Exception e) {
-            Log.e(LOGTAG, "error invalidating token", e);
-        }
+    @Override
+    public void onResume() {
+        super.onResume();
+        mVPFragment.getPreferenceScreen().getSharedPreferences()
+                .registerOnSharedPreferenceChangeListener(this);   
     }
 
-    private static final String LOGTAG = "VoicePlusSetup";
-
-    void getToken(final Account account, final int position) {
-        AccountManager am = AccountManager.get(this);
-        if (am == null)
-            return;
-        am.getAuthToken(account, "grandcentral", null, this, new AccountManagerCallback<Bundle>() {
-            @Override
-            public void run(AccountManagerFuture<Bundle> future) {
-                try {
-                    settings.edit()
-                    .putString("account", account.name)
-                    .commit();
-                    Intent intent = new Intent(VoicePlusSetup.this, VoicePlusService.class);
-                    intent.setAction(VoicePlusService.ACCOUNT_CHANGED);
-                    startService(intent);
-
-                    lv.setItemChecked(position, true);
-                    lv.requestLayout();
-                    Log.i(LOGTAG, "Token retrieved.");
-                }
-                catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-            }
-        }, new Handler());
+    @Override
+    public void onPause() {
+        super.onPause();
+        mVPFragment.getPreferenceScreen().getSharedPreferences()
+                .unregisterOnSharedPreferenceChangeListener(this);
     }
+
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        mVPFragment.updateSummary(key);
+    }
+   
 }
