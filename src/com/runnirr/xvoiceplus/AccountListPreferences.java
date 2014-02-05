@@ -1,15 +1,8 @@
 package com.runnirr.xvoiceplus;
 
-import org.cyanogenmod.voiceplus.VoicePlusService;
-
 import android.accounts.Account;
 import android.accounts.AccountManager;
-import android.accounts.AccountManagerCallback;
-import android.accounts.AccountManagerFuture;
 import android.content.Context;
-import android.content.Intent;
-import android.os.Bundle;
-import android.os.Handler;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.util.AttributeSet;
@@ -39,13 +32,14 @@ public class AccountListPreferences extends ListPreference {
             @Override
             public boolean onPreferenceChange(Preference preference, Object newValue) {
                 String newAccountString = (String) newValue;
+                Log.d(TAG, "Account changed to " + newValue);
                 for (int i = 0; i < accounts.length; i++) {
                     if (accounts[i].name.equals(newAccountString)) {
-                        final Account newAccount = accounts[i];
                         final String previousAccount = getSharedPreferences().getString("account", null);
+                        GoogleVoiceManager.invalidateToken(getContext(), previousAccount);
 
-                        invalidateToken(previousAccount);
-                        getToken(newAccount);
+                        final Account newAccount = accounts[i];
+                        GoogleVoiceManager.getToken(getContext(), newAccount);
 
                         return true;
                     }
@@ -53,48 +47,5 @@ public class AccountListPreferences extends ListPreference {
                 return false;
             }
         });
-    }
-
-    private void invalidateToken(final String account) {
-        if (account == null)
-            return;
-
-        new Thread() {
-            @Override
-            public void run() {
-                try {
-                    // grab the auth token
-                    Bundle bundle = AccountManager.get(getContext()).getAuthToken(new Account(account, "com.google"), "grandcentral", null, true, null, null).getResult();
-                    String authToken = bundle.getString(AccountManager.KEY_AUTHTOKEN);
-                    AccountManager.get(getContext()).invalidateAuthToken("com.google", authToken);
-                    Log.i(TAG, "Token invalidated.");
-                }
-                catch (Exception e) {
-                    Log.e(TAG, "error invalidating token", e);
-                }
-            }
-        }.start();
-    }
-
-    private void getToken(final Account account) {
-        AccountManager am = AccountManager.get(getContext());
-        if (am == null)
-            return;
-
-        am.getAuthToken(account, "grandcentral", null, false, new AccountManagerCallback<Bundle>() {
-            @Override
-            public void run(AccountManagerFuture<Bundle> future) {
-                try {
-                    Intent intent = new Intent(getContext(), VoicePlusService.class);
-                    intent.setAction(VoicePlusService.ACCOUNT_CHANGED);
-                    getContext().startService(intent);
-
-                    Log.i(TAG, "Token retrieved.");
-                }
-                catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-            }
-        }, new Handler());
     }
 }
