@@ -29,5 +29,6 @@
         android:summaryOn="@string/settings_propagate_delete_summary_on"
         android:summaryOff="@string/settings_propagate_delete_summary_off"
         android:defaultValue="false"
-        android:persistent="true"/>
+        android:persistent="true"
+        android:enabled="false"/>
 </PreferenceScreen>
