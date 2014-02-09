@@ -1,4 +1,6 @@
-package com.runnirr.xvoiceplus;
+package com.runnirr.xvoiceplus.ui;
+
+import com.runnirr.xvoiceplus.gv.GoogleVoiceManager;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;

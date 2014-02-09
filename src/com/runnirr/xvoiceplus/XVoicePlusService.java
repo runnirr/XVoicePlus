@@ -1,4 +1,4 @@
-package org.cyanogenmod.voiceplus;
+package com.runnirr.xvoiceplus;
 
 import android.app.Activity;
 import android.app.IntentService;
@@ -8,15 +8,13 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
-import android.preference.PreferenceManager;
 import android.util.Log;
 
-import com.runnirr.xvoiceplus.GoogleVoiceManager;
-import com.runnirr.xvoiceplus.GoogleVoiceManager.Conversation;
-import com.runnirr.xvoiceplus.GoogleVoiceManager.Message;
-import com.runnirr.xvoiceplus.IncomingGvReceiver;
-import com.runnirr.xvoiceplus.OutgoingSmsReceiver;
-import com.runnirr.xvoiceplus.SmsUtils;
+import com.runnirr.xvoiceplus.gv.GoogleVoiceManager;
+import com.runnirr.xvoiceplus.gv.GoogleVoiceManager.Conversation;
+import com.runnirr.xvoiceplus.gv.GoogleVoiceManager.Message;
+import com.runnirr.xvoiceplus.receivers.IncomingGvReceiver;
+import com.runnirr.xvoiceplus.receivers.OutgoingSmsReceiver;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -31,21 +29,21 @@ import java.util.Set;
 /**
  * Created by koush on 7/5/13.
  */
-public class VoicePlusService extends IntentService {
+public class XVoicePlusService extends IntentService {
     private static final String TAG = "XVoicePlusService";
     
     private GoogleVoiceManager GVManager = new GoogleVoiceManager(this);
     
-    public VoicePlusService() {
+    public XVoicePlusService() {
         this("XVoicePlusService");
     }
 
-    public VoicePlusService(String name) {
+    public XVoicePlusService(String name) {
         super(name);
     }
-
-    private SharedPreferences getSettings() {
-        return PreferenceManager.getDefaultSharedPreferences(this);
+    
+    private SharedPreferences getAppSettings() {
+        return getSharedPreferences("settings", MODE_PRIVATE);
     }
     
     private SharedPreferences getRecentMessages() {
@@ -82,7 +80,7 @@ public class VoicePlusService extends IntentService {
         }
     }
 
-    public static final String ACCOUNT_CHANGED = VoicePlusService.class.getPackage().getName() + ".ACCOUNT_CHANGED";
+    public static final String ACCOUNT_CHANGED = XVoicePlusService.class.getPackage().getName() + ".ACCOUNT_CHANGED";
 
     // mark all sent intents as failures
     public void fail(List<PendingIntent> sentIntents) {
@@ -286,26 +284,31 @@ public class VoicePlusService extends IntentService {
     private void updateMessages() throws Exception {
         List<Conversation> conversations = GVManager.retrieveMessages();
 
-        long timestamp = getSettings().getLong("timestamp", 0);
+        long timestamp = getAppSettings().getLong("timestamp", 0);
         LinkedList<Message> oldMessages = new LinkedList<Message>();
         LinkedList<Message> newMessages = new LinkedList<Message>();
         for (Conversation conversation: conversations) {
             for (Message m : conversation.messages) {
-                if (m.date > timestamp) {
-                    newMessages.add(m);
-                } else {
-                    oldMessages.add(m);
+                if(m.phoneNumber != null && m.message != null) {
+                    if (m.date > timestamp) {
+                        newMessages.add(m);
+                    } else {
+                        oldMessages.add(m);
+                    }
                 }
             }
         }
 
-        if (getSettings().getBoolean("settings_propagate_delete", false)) {
-            Log.d(TAG, "Checking for, and propogating deletes");
-            for (Message m: oldMessages) {
-                deleteGvMessageIfNeeded(m);
-            }
-        }
+//        if (getUserPreferences().getBoolean("settings_propagate_delete", false)) {
+//            Log.d(TAG, "Checking for, and propogating deletes");
+//            for (Message m: oldMessages) {
+//                deleteGvMessageIfNeeded(m);
+//            }
+//        }
 
+        for (Message message : oldMessages) {
+            markReadIfNeeded(message);
+        }
         for (Message message : newMessages) {
             markReadIfNeeded(message);
         }
@@ -321,10 +324,6 @@ public class VoicePlusService extends IntentService {
         long max = timestamp;
         for (Message message : newMessages) {
             max = Math.max(max, message.date);
-            if (message.phoneNumber == null)
-                continue;
-            if (message.message == null)
-                continue;
 
             // on first sync, just populate the mms provider...
             // don't send any broadcasts.
@@ -346,7 +345,7 @@ public class VoicePlusService extends IntentService {
             }
         }
 
-        getSettings().edit()
+        getAppSettings().edit()
             .putLong("timestamp", max)
             .apply();
     }

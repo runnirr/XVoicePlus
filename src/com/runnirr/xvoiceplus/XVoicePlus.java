@@ -14,6 +14,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 
+import com.runnirr.xvoiceplus.receivers.IncomingGvReceiver;
+import com.runnirr.xvoiceplus.receivers.OutgoingSmsReceiver;
+
 import android.annotation.TargetApi;
 import android.app.AndroidAppHelper;
 import android.app.AppOpsManager;
@@ -43,7 +46,7 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
 
     private boolean HOOKED_GV = false;
 
-    private SharedPreferences mSettings;
+    private SharedPreferences mUserPreferences;
 
     @Override
     public void handleLoadPackage(LoadPackageParam lpparam) throws ClassNotFoundException {
@@ -74,7 +77,7 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
     @Override
     public void initZygote(StartupParam startupParam) {
         XResources.setSystemWideReplacement("android", "bool", "config_sms_capable", true);
-        mSettings = new XSharedPreferences("com.runnirr.xvoiceplus");
+        mUserPreferences = new XSharedPreferences("com.runnirr.xvoiceplus");
 
         hookSendSms();
         hookXVoicePlusPermission();
@@ -271,9 +274,9 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
     }
 
     private int getOutgoingStrategy() {
-        String outboundPref = mSettings.getString("settings_outbound_messages", "0");
-        if (!mSettings.getBoolean("settings_enabled", false) ||
-                mSettings.getString("account", null) == null ||
+        String outboundPref = mUserPreferences.getString("settings_outbound_messages", "0");
+        if (!mUserPreferences.getBoolean("settings_enabled", false) ||
+                mUserPreferences.getString("account", null) == null ||
                 outboundPref.equals("0")) {
             // Not enabled or no account selected, or selected to send via carrier
             return R.string.outgoing_carrier;

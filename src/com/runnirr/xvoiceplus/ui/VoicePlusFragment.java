@@ -1,6 +1,7 @@
-package com.runnirr.xvoiceplus;
+package com.runnirr.xvoiceplus.ui;
 
-import org.cyanogenmod.voiceplus.VoicePlusService;
+import com.runnirr.xvoiceplus.R;
+import com.runnirr.xvoiceplus.XVoicePlusService;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -19,7 +20,7 @@ public class VoicePlusFragment extends PreferenceFragment {
         super.onCreate(savedInstanceState);
 
         addPreferencesFromResource(R.xml.preferences);
-        getActivity().startService(new Intent(getActivity(), VoicePlusService.class));
+        getActivity().startService(new Intent(getActivity(), XVoicePlusService.class));
     }
 
     @Override

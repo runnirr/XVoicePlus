@@ -1,6 +1,6 @@
-package com.runnirr.xvoiceplus;
+package com.runnirr.xvoiceplus.receivers;
 
-import org.cyanogenmod.voiceplus.VoicePlusService;
+import com.runnirr.xvoiceplus.XVoicePlusService;
 
 import android.content.Context;
 import android.content.Intent;
@@ -12,7 +12,7 @@ public class OutgoingSmsReceiver extends WakefulBroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        intent.setClass(context, VoicePlusService.class);
+        intent.setClass(context, XVoicePlusService.class);
         startWakefulService(context, intent);
     }
 

@@ -21,14 +21,5 @@
         android:entryValues="@array/outbound_settings_values"
         android:defaultValue="@string/outgoing_settings_default_value"
         android:persistent="true"/>
-    
-    <SwitchPreference 
-        android:dependency="settings_enabled"
-        android:key="settings_propagate_delete"
-        android:title="@string/settings_propagate_delete"
-        android:summaryOn="@string/settings_propagate_delete_summary_on"
-        android:summaryOff="@string/settings_propagate_delete_summary_off"
-        android:defaultValue="false"
-        android:persistent="true"
-        android:enabled="false"/>
+
 </PreferenceScreen>

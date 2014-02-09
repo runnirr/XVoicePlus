@@ -1,10 +1,8 @@
-package com.runnirr.xvoiceplus;
+package com.runnirr.xvoiceplus.gv;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import org.cyanogenmod.voiceplus.VoicePlusService;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
@@ -23,9 +21,8 @@ import android.util.Log;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.annotations.SerializedName;
-import com.koushikdutta.async.http.libcore.RawHeaders;
-import com.koushikdutta.ion.HeadersCallback;
 import com.koushikdutta.ion.Ion;
+import com.runnirr.xvoiceplus.XVoicePlusService;
 
 public class GoogleVoiceManager {
     
@@ -68,17 +65,26 @@ public class GoogleVoiceManager {
 
     private final Context mContext;
     private String mRnrse;
-
+    
     public GoogleVoiceManager(Context context) {
         mContext = context;
     }
 
+    private SharedPreferences getSettings() {
+        return PreferenceManager.getDefaultSharedPreferences(mContext);
+    }
+
     private String getAccount() {
-        return getSettings().getString("account", null);
+        SharedPreferences sp = mContext.getSharedPreferences("settings", Context.MODE_PRIVATE);
+        return sp.getString("account", null);
     }
     
     public boolean refreshAuth() {
         return getRnrse(true) != null;
+    }
+    
+    private void saveRnrse(String rnrse) {
+        getSettings().edit().putString("_rnr_se", rnrse).apply();
     }
     
     private String getRnrse() {
@@ -132,10 +138,7 @@ public class GoogleVoiceManager {
             Log.e(TAG, "Error verifying GV SMS forwarding", e);
         }
 
-       getSettings().edit()
-        .putString("_rnr_se", rnrse)
-        .apply();
-       
+       saveRnrse(rnrse);
        return rnrse;
     }
     
@@ -151,15 +154,7 @@ public class GoogleVoiceManager {
     public void sendGvMessage(String number, String text) throws Exception {
         final String authToken = getAuthToken();
         JsonObject json = Ion.with(mContext, "https://www.google.com/voice/sms/send/")
-                .onHeaders(new HeadersCallback() {
-                    @Override
-                    public void onHeaders(RawHeaders headers) {
-                        if (headers.getResponseCode() == 401) {
-                            AccountManager.get(mContext).invalidateAuthToken("com.google", authToken);
-                            getSettings().edit().remove("_rnr_se").apply();
-                        }
-                    }
-                })
+                .onHeaders(new GvHeadersCallback(mContext, authToken))
                 .setHeader("Authorization", "GoogleLogin auth=" + authToken)
                 .setBodyParameter("phoneNumber", number)
                 .setBodyParameter("sendErrorSms", "0")
@@ -180,16 +175,9 @@ public class GoogleVoiceManager {
      */
     public void markGvMessageRead(String id, int read) throws Exception {
         final String authToken = getAuthToken();
+        Log.d(TAG, "Marking messsage " + id + " as read");
         Ion.with(mContext, "https://www.google.com/voice/inbox/mark/")
-        .onHeaders(new HeadersCallback() {
-            @Override
-            public void onHeaders(RawHeaders headers) {
-                if (headers.getResponseCode() == 401) {
-                    AccountManager.get(mContext).invalidateAuthToken("com.google", authToken);
-                    getSettings().edit().remove("_rnr_se").commit();
-                }
-            }
-        })
+        .onHeaders(new GvHeadersCallback(mContext, authToken))
         .setHeader("Authorization", "GoogleLogin auth=" + authToken)
         .setBodyParameter("messages", id)
         .setBodyParameter("read", String.valueOf(read))
@@ -199,15 +187,7 @@ public class GoogleVoiceManager {
     public void deleteGvMessage(String id) throws Exception {
         final String authToken = getAuthToken();
         Ion.with(mContext, "https://www.google.com/voice/inbox/deleteMessages/")
-        .onHeaders(new HeadersCallback() {
-            @Override
-            public void onHeaders(RawHeaders headers) {
-                if (headers.getResponseCode() == 401) {
-                    AccountManager.get(mContext).invalidateAuthToken("com.google", authToken);
-                    getSettings().edit().remove("_rnr_se").commit();
-                }
-            }
-        })
+        .onHeaders(new GvHeadersCallback(mContext, authToken))
         .setHeader("Authorization", "GoogleLogin auth=" + authToken)
         .setBodyParameter("messages", id)
         .setBodyParameter("trash", "1")
@@ -216,7 +196,7 @@ public class GoogleVoiceManager {
     
     // refresh the messages that were on the server
     public List<Conversation> retrieveMessages() throws Exception {
-        String account = getSettings().getString("account", null);
+        String account = getAccount();
         if (account == null)
             return new ArrayList<Conversation>();
 
@@ -226,16 +206,7 @@ public class GoogleVoiceManager {
         final String authToken = getAuthToken();
 
         Payload payload = Ion.with(mContext, "https://www.google.com/voice/request/messages")
-                .onHeaders(new HeadersCallback() {
-                    @Override
-                    public void onHeaders(RawHeaders headers) {
-                        if (headers.getResponseCode() == 401) {
-                            Log.e(TAG, "Refresh failed:\n" + headers.toHeaderString());
-                            AccountManager.get(mContext).invalidateAuthToken("com.google", authToken);
-                            getSettings().edit().remove("_rnr_se").apply();
-                        }
-                    }
-                })
+                .onHeaders(new GvHeadersCallback(mContext, authToken))
                 .setHeader("Authorization", "GoogleLogin auth=" + authToken)
                 .as(Payload.class)
                 .get();
@@ -273,8 +244,8 @@ public class GoogleVoiceManager {
             @Override
             public void run(AccountManagerFuture<Bundle> future) {
                 try {
-                    Intent intent = new Intent(context, VoicePlusService.class);
-                    intent.setAction(VoicePlusService.ACCOUNT_CHANGED);
+                    Intent intent = new Intent(context, XVoicePlusService.class);
+                    intent.setAction(XVoicePlusService.ACCOUNT_CHANGED);
                     context.startService(intent);
 
                     Log.i(TAG, "Token retrieved.");
@@ -286,7 +257,5 @@ public class GoogleVoiceManager {
         }, new Handler());
     }
     
-    private SharedPreferences getSettings() {
-        return PreferenceManager.getDefaultSharedPreferences(mContext);
-    }
+    
 }

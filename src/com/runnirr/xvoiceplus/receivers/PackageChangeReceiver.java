@@ -1,7 +1,8 @@
-package org.cyanogenmod.voiceplus;
+package com.runnirr.xvoiceplus.receivers;
 
 import com.runnirr.xvoiceplus.R;
 import com.runnirr.xvoiceplus.XVoicePlus;
+import com.runnirr.xvoiceplus.ui.XVoicePlusSetup;
 
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -26,7 +27,7 @@ public class PackageChangeReceiver extends BroadcastReceiver {
         if (pm == null)
             return;
 
-        ComponentName activity = new ComponentName(context, VoicePlusSetup.class);
+        ComponentName activity = new ComponentName(context, XVoicePlusSetup.class);
 
         int ENABLED_STATE;
         try {

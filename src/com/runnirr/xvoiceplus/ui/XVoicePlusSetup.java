@@ -1,13 +1,11 @@
-package org.cyanogenmod.voiceplus;
-
-import com.runnirr.xvoiceplus.VoicePlusFragment;
+package com.runnirr.xvoiceplus.ui;
 
 import android.app.Activity;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.os.Bundle;
 
-public class VoicePlusSetup extends Activity implements OnSharedPreferenceChangeListener {
+public class XVoicePlusSetup extends Activity implements OnSharedPreferenceChangeListener {
 
     private final VoicePlusFragment mVPFragment = new VoicePlusFragment();
 

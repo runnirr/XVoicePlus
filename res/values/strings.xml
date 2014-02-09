@@ -40,7 +40,7 @@
         <item name="outgoing_voice">@string/outgoing_voice</item>
         <!-- <item name="outgoing_prompt">@string/outgoing_prompt</item> -->
     </string-array>
-    <string name="outgoing_settings_default_value">0</string>
+    <string name="outgoing_settings_default_value">1</string>
     <string-array name="outbound_settings_values">
         <item name="outgoing_carrier">0</item>
         <item name="outgoing_voice">1</item>
