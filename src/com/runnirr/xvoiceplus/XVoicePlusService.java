@@ -268,6 +268,8 @@ public class XVoicePlusService extends IntentService {
     }
     
     private void deleteGvMessageIfNeeded(Message message) {
+        // NOTE: This method is went through limited testing and
+        // doesn't seem to work. Its not being used anywhere
         try {
             if (messageExists(message)) {
                 // If the message is in Google Voice, and on on the phone,
@@ -290,6 +292,7 @@ public class XVoicePlusService extends IntentService {
         for (Conversation conversation: conversations) {
             for (Message m : conversation.messages) {
                 if(m.phoneNumber != null && m.message != null) {
+                    markReadIfNeeded(m);
                     if (m.date > timestamp) {
                         newMessages.add(m);
                     } else {
@@ -297,20 +300,6 @@ public class XVoicePlusService extends IntentService {
                     }
                 }
             }
-        }
-
-//        if (getUserPreferences().getBoolean("settings_propagate_delete", false)) {
-//            Log.d(TAG, "Checking for, and propogating deletes");
-//            for (Message m: oldMessages) {
-//                deleteGvMessageIfNeeded(m);
-//            }
-//        }
-
-        for (Message message : oldMessages) {
-            markReadIfNeeded(message);
-        }
-        for (Message message : newMessages) {
-            markReadIfNeeded(message);
         }
 
         // sort by date order so the events get added in the same order

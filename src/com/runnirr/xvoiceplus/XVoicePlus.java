@@ -131,7 +131,7 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
             protected void afterHookedMethod(MethodHookParam param) throws Throwable {
                 final String pkgName = (String) getObjectField(param.args[0], "packageName");
 
-                if (XVOICE_PLUS_PACKAGE.equals(pkgName) || "org.cyanogenmod.voiceplus".equals(pkgName)) {
+                if (XVOICE_PLUS_PACKAGE.equals(pkgName)) {
                     final Object extras = getObjectField(param.args[0], "mExtras");
                     final HashSet<String> grantedPerms = 
                             (HashSet<String>) getObjectField(extras, "grantedPermissions");
