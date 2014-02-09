@@ -40,14 +40,10 @@
 
         <service android:name="org.cyanogenmod.voiceplus.VoicePlusService" />
 
-        <receiver android:name="com.runnirr.xvoiceplus.receivers.OutgoingSmsReceiver">
-            <intent-filter>
-                <action android:name="com.runnirr.xvoiceplus.OUTGOING_SMS" />
-            </intent-filter>
-        </receiver>
-        <receiver android:name="com.runnirr.xvoiceplus.receivers.IncomingGvReceiver">
+        <receiver android:name="com.runnirr.xvoiceplus.receivers.MessageEventReceiver">
             <intent-filter>
                 <action android:name="com.runnirr.xvoiceplus.INCOMING_VOICE" />
+                <action android:name="com.runnirr.xvoiceplus.OUTGOING_SMS" />
             </intent-filter>
         </receiver>
         

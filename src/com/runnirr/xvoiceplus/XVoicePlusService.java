@@ -13,8 +13,7 @@ import android.util.Log;
 import com.runnirr.xvoiceplus.gv.GoogleVoiceManager;
 import com.runnirr.xvoiceplus.gv.GvResponse.Conversation;
 import com.runnirr.xvoiceplus.gv.GvResponse.Message;
-import com.runnirr.xvoiceplus.receivers.IncomingGvReceiver;
-import com.runnirr.xvoiceplus.receivers.OutgoingSmsReceiver;
+import com.runnirr.xvoiceplus.receivers.MessageEventReceiver;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -66,14 +65,14 @@ public class XVoicePlusService extends IntentService {
     @Override
     protected void onHandleIntent(final Intent intent) {
         // handle an outgoing sms
-        if (OutgoingSmsReceiver.OUTGOING_SMS.equals(intent.getAction())) {
+        if (MessageEventReceiver.OUTGOING_SMS.equals(intent.getAction())) {
             handleOutgoingSms(intent);
             startRefresh(false);
-            OutgoingSmsReceiver.completeWakefulIntent(intent);
+            MessageEventReceiver.completeWakefulIntent(intent);
         }
-        else if (IncomingGvReceiver.INCOMING_VOICE.equals(intent.getAction())) {
+        else if (MessageEventReceiver.INCOMING_VOICE.equals(intent.getAction())) {
             startRefresh(true);
-            IncomingGvReceiver.completeWakefulIntent(intent);
+            MessageEventReceiver.completeWakefulIntent(intent);
         }
         else if (ACCOUNT_CHANGED.equals(intent.getAction())) {
             GVManager = new GoogleVoiceManager(this);

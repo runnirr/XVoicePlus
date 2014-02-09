@@ -14,8 +14,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 
-import com.runnirr.xvoiceplus.receivers.IncomingGvReceiver;
-import com.runnirr.xvoiceplus.receivers.OutgoingSmsReceiver;
+import com.runnirr.xvoiceplus.receivers.MessageEventReceiver;
 
 import android.annotation.TargetApi;
 import android.app.AndroidAppHelper;
@@ -65,7 +64,7 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
                     Log.d(TAG, "Received incoming Google Voice notification");
                     Context context = (Context) param.args[0];
                     Intent incomingGvIntent = new Intent()
-                            .setAction(IncomingGvReceiver.INCOMING_VOICE);
+                            .setAction(MessageEventReceiver.INCOMING_VOICE);
 
                     context.sendOrderedBroadcast(incomingGvIntent, null);
                 }
@@ -226,7 +225,7 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
             Context context = getContext();
             if (context != null) {
                 Intent outgoingSms = new Intent()
-                        .setAction(OutgoingSmsReceiver.OUTGOING_SMS)
+                        .setAction(MessageEventReceiver.OUTGOING_SMS)
                         .putExtra("destAddr", destAddr)
                         .putExtra("scAddr", scAddr)
                         .putStringArrayListExtra("parts", texts)
