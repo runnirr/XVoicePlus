@@ -12,7 +12,7 @@ import android.util.Log;
 
 public class AccountListPreferences extends ListPreference {
 
-    private static final String TAG = "XVoiceAccountList";
+    private static final String TAG = AccountListPreferences.class.getName();
 
     public AccountListPreferences(Context context) {
         this(context, null);

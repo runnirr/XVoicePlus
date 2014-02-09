@@ -37,7 +37,7 @@ import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;
 
 public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit {
-    private static final String TAG = "XVoicePlus";
+    private static final String TAG = XVoicePlus.class.getName();
 
     public static final String GOOGLE_VOICE_PACKAGE = "com.google.android.apps.googlevoice";
     private static final String XVOICE_PLUS_PACKAGE = "com.runnirr.xvoiceplus";

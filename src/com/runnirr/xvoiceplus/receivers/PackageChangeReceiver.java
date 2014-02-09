@@ -16,12 +16,14 @@ import android.widget.Toast;
  * Created by koush on 7/17/13.
  */
 public class PackageChangeReceiver extends BroadcastReceiver {
+    private static final String TAG = PackageChangeReceiver.class.getName();
+
     @Override
     public void onReceive(Context context, Intent intent) {
         if (intent == null)
             return;
 
-        Log.d("XVoicePlus.PackageChangeReceiver", "Handling intent " + intent.getAction());
+        Log.d(TAG, "Handling intent " + intent.getAction());
 
         PackageManager pm = context.getPackageManager();
         if (pm == null)

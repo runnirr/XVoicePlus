@@ -11,7 +11,7 @@ import com.koushikdutta.ion.HeadersCallback;
 
 public class GvHeadersCallback implements HeadersCallback {
     
-    private static final String TAG = "XVoicePlus:HeadersCallback";
+    private static final String TAG = GvHeadersCallback.class.getName();
     
     private final String mAuthToken;
     private final Context mContext;

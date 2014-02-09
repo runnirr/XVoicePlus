@@ -11,8 +11,8 @@ import android.net.Uri;
 import android.util.Log;
 
 import com.runnirr.xvoiceplus.gv.GoogleVoiceManager;
-import com.runnirr.xvoiceplus.gv.GoogleVoiceManager.Conversation;
-import com.runnirr.xvoiceplus.gv.GoogleVoiceManager.Message;
+import com.runnirr.xvoiceplus.gv.GvResponse.Conversation;
+import com.runnirr.xvoiceplus.gv.GvResponse.Message;
 import com.runnirr.xvoiceplus.receivers.IncomingGvReceiver;
 import com.runnirr.xvoiceplus.receivers.OutgoingSmsReceiver;
 
@@ -30,7 +30,7 @@ import java.util.Set;
  * Created by koush on 7/5/13.
  */
 public class XVoicePlusService extends IntentService {
-    private static final String TAG = "XVoicePlusService";
+    private static final String TAG = XVoicePlusService.class.getName();
     
     private GoogleVoiceManager GVManager = new GoogleVoiceManager(this);
     

@@ -20,48 +20,13 @@ import android.util.Log;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.annotations.SerializedName;
 import com.koushikdutta.ion.Ion;
 import com.runnirr.xvoiceplus.XVoicePlusService;
+import com.runnirr.xvoiceplus.gv.GvResponse.Conversation;
+import com.runnirr.xvoiceplus.gv.GvResponse.Payload;
 
 public class GoogleVoiceManager {
-    
-    public static class Payload {
-        @SerializedName("messageList")
-        public ArrayList<Conversation> conversations = new ArrayList<Conversation>();
-    }
-
-    public static class Conversation {
-        @SerializedName("children")
-        public ArrayList<Message> messages = new ArrayList<Message>();
-    }
-
-    public static class Message {
-        @SerializedName("startTime")
-        public long date;
-
-        @SerializedName("phoneNumber")
-        public String phoneNumber;
-
-        @SerializedName("message")
-        public String message;
-
-        // 10 is incoming
-        // 11 is outgoing
-        @SerializedName("type")
-        public int type;
-
-        @SerializedName("id")
-        public String id;
-
-        @SerializedName("conversationId")
-        public String conversationId;
-
-        @SerializedName("isRead")
-        public int read;
-    }
-    
-    private static final String TAG = "XVoice:GoogleVoiceManager";
+    private static final String TAG = GoogleVoiceManager.class.getName();
 
     private final Context mContext;
     private String mRnrse;
