@@ -28,6 +28,8 @@ import com.runnirr.xvoiceplus.gv.GvResponse.Payload;
 public class GoogleVoiceManager {
     private static final String TAG = GoogleVoiceManager.class.getName();
 
+    public static final String ACCOUNT_CHANGED = "com.runnirr.xvoiceplus.ACCOUNT_CHANGED";
+
     private final Context mContext;
     private String mRnrse;
     
@@ -76,7 +78,13 @@ public class GoogleVoiceManager {
                 .get();
 
         String rnrse = userInfo.get("r").getAsString();
+        verifySmsForwarding(userInfo, authToken, rnrse);
 
+        saveRnrse(rnrse);
+        return rnrse;
+    }
+
+    private void verifySmsForwarding(JsonObject userInfo, String authToken, String rnrse) {
         try {
             TelephonyManager tm = (TelephonyManager) mContext.getSystemService(Context.TELEPHONY_SERVICE);
             String number = tm.getLine1Number();
@@ -84,27 +92,25 @@ public class GoogleVoiceManager {
                 JsonObject phones = userInfo.getAsJsonObject("phones");
                 for (Map.Entry<String, JsonElement> entry: phones.entrySet()) {
                     JsonObject phone = entry.getValue().getAsJsonObject();
-                    if (!PhoneNumberUtils.compare(number, phone.get("phoneNumber").getAsString()))
-                        continue;
-                    if (!phone.get("smsEnabled").getAsBoolean())
+                    if (!phone.get("smsEnabled").getAsBoolean()) {
                         break;
-                    Log.i(TAG, "Disabling SMS forwarding to phone.");
-                    Ion.with(mContext, "https://www.google.com/voice/settings/editForwardingSms/")
-                    .setHeader("Authorization", "GoogleLogin auth=" + authToken)
-                    .setBodyParameter("phoneId", entry.getKey())
-                    .setBodyParameter("enabled", "0")
-                    .setBodyParameter("_rnr_se", rnrse)
-                    .asJsonObject();
-                    break;
+                    }
+                    if (PhoneNumberUtils.compare(number, phone.get("phoneNumber").getAsString())) {
+                        Log.i(TAG, "Disabling SMS forwarding to phone.");
+                        Ion.with(mContext, "https://www.google.com/voice/settings/editForwardingSms/")
+                        .setHeader("Authorization", "GoogleLogin auth=" + authToken)
+                        .setBodyParameter("phoneId", entry.getKey())
+                        .setBodyParameter("enabled", "0")
+                        .setBodyParameter("_rnr_se", rnrse)
+                        .asJsonObject();
+                        break;
+                    }
                 }
             }
         }
         catch (Exception e) {
             Log.e(TAG, "Error verifying GV SMS forwarding", e);
         }
-
-       saveRnrse(rnrse);
-       return rnrse;
     }
     
     private String getAuthToken() throws Exception {
@@ -210,7 +216,7 @@ public class GoogleVoiceManager {
             public void run(AccountManagerFuture<Bundle> future) {
                 try {
                     Intent intent = new Intent(context, XVoicePlusService.class);
-                    intent.setAction(XVoicePlusService.ACCOUNT_CHANGED);
+                    intent.setAction(ACCOUNT_CHANGED);
                     context.startService(intent);
 
                     Log.i(TAG, "Token retrieved.");

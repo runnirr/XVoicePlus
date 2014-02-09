@@ -74,12 +74,10 @@ public class XVoicePlusService extends IntentService {
             startRefresh(true);
             MessageEventReceiver.completeWakefulIntent(intent);
         }
-        else if (ACCOUNT_CHANGED.equals(intent.getAction())) {
+        else if (GoogleVoiceManager.ACCOUNT_CHANGED.equals(intent.getAction())) {
             GVManager = new GoogleVoiceManager(this);
         }
     }
-
-    public static final String ACCOUNT_CHANGED = XVoicePlusService.class.getPackage().getName() + ".ACCOUNT_CHANGED";
 
     // mark all sent intents as failures
     public void fail(List<PendingIntent> sentIntents) {
