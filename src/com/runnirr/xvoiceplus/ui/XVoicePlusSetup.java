@@ -7,7 +7,7 @@ import android.os.Bundle;
 
 public class XVoicePlusSetup extends Activity implements OnSharedPreferenceChangeListener {
 
-    private final VoicePlusFragment mVPFragment = new VoicePlusFragment();
+    private final XVoicePlusFragment mVPFragment = new XVoicePlusFragment();
 
     @Override
     public void onCreate(Bundle savedInstanceState) {

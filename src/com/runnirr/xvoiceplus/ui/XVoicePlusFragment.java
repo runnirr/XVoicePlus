@@ -13,7 +13,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-public class VoicePlusFragment extends PreferenceFragment {
+public class XVoicePlusFragment extends PreferenceFragment {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
