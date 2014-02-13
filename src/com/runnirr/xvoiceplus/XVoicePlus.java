@@ -43,8 +43,6 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
 
     private static final String PERM_BROADCAST_SMS = "android.permission.BROADCAST_SMS";
 
-    private boolean HOOKED_GV = false;
-
     private SharedPreferences mUserPreferences;
 
     @Override
@@ -55,22 +53,19 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
     }
 
     private void hookGoogleVoice(LoadPackageParam lpparam) {
-        if (!HOOKED_GV){
-            findAndHookMethod(GOOGLE_VOICE_PACKAGE + ".PushNotificationReceiver", lpparam.classLoader,
-                    "onReceive", Context.class, Intent.class,
-                    new XC_MethodHook() {
-                @Override
-                protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                    Log.d(TAG, "Received incoming Google Voice notification");
-                    Context context = (Context) param.args[0];
-                    Intent incomingGvIntent = new Intent()
-                            .setAction(MessageEventReceiver.INCOMING_VOICE);
+        findAndHookMethod(GOOGLE_VOICE_PACKAGE + ".PushNotificationReceiver", lpparam.classLoader,
+                "onReceive", Context.class, Intent.class,
+                new XC_MethodHook() {
+            @Override
+            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                Log.d(TAG, "Received incoming Google Voice notification");
+                Context context = (Context) param.args[0];
+                Intent incomingGvIntent = new Intent()
+                        .setAction(MessageEventReceiver.INCOMING_VOICE);
 
-                    context.sendOrderedBroadcast(incomingGvIntent, null);
-                }
-            });
-            HOOKED_GV= true;
-        }
+                context.sendOrderedBroadcast(incomingGvIntent, null);
+            }
+        });
     }
 
     @Override
@@ -106,15 +101,22 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
     }
 
     private void hookSmsMessage(){
-        findAndHookMethod(SmsMessage.class, "createFromPdu", byte[].class, new XC_MethodHook() {
+        findAndHookMethod(SmsMessage.class, "createFromPdu", byte[].class, String.class, new XC_MethodHook() {
 
             @Override
-            protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                if(param.getThrowable() != null) {
-                    Log.w(TAG, "Error parsing pdu in default format. Now trying GSM 3GPP");
-                    SmsMessage result = (SmsMessage) callStaticMethod(SmsMessage.class, "createFromPdu", param.args[0], SmsUtils.FORMAT_3GPP);
-                    param.setThrowable(null);
-                    param.setResult(result);
+            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                if(!SmsUtils.FORMAT_3GPP.equals((String) param.args[1])) {
+                    try {
+                        Log.d(TAG, "Trying to parse pdu in GSM 3GPP");
+                        SmsMessage result = (SmsMessage) callStaticMethod(SmsMessage.class, "createFromPdu", param.args[0], SmsUtils.FORMAT_3GPP);
+                        if (result.getServiceCenterAddress().equals(SmsUtils.SERVICE_CENTER)) {
+                            param.setResult(result);
+                        } else {
+                            Log.w(TAG, "Expected service center " + SmsUtils.SERVICE_CENTER + " for Google Voice message. Falling back to default format");
+                        }
+                    } catch (Throwable e) {
+                        Log.w(TAG, "Error parsing in GSM 3GPP. Falling back to default behavior");
+                    }
                 }
             }
         });

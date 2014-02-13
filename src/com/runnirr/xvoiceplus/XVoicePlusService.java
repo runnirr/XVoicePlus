@@ -14,6 +14,7 @@ import com.runnirr.xvoiceplus.gv.GoogleVoiceManager;
 import com.runnirr.xvoiceplus.gv.GvResponse.Conversation;
 import com.runnirr.xvoiceplus.gv.GvResponse.Message;
 import com.runnirr.xvoiceplus.receivers.MessageEventReceiver;
+import com.runnirr.xvoiceplus.receivers.PackageChangeReceiver;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -73,6 +74,10 @@ public class XVoicePlusService extends IntentService {
         else if (MessageEventReceiver.INCOMING_VOICE.equals(intent.getAction())) {
             startRefresh(true);
             MessageEventReceiver.completeWakefulIntent(intent);
+        }
+        else if (PackageChangeReceiver.BOOT_COMPLETED.equals(intent.getAction())) {
+            startRefresh(false);
+            PackageChangeReceiver.completeWakefulIntent(intent);
         }
         else if (GoogleVoiceManager.ACCOUNT_CHANGED.equals(intent.getAction())) {
             GVManager = new GoogleVoiceManager(this);
