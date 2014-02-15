@@ -46,7 +46,7 @@
                 <action android:name="com.runnirr.xvoiceplus.OUTGOING_SMS" />
             </intent-filter>
         </receiver>
-        
+
         <receiver android:name="com.runnirr.xvoiceplus.receivers.PackageChangeReceiver">
             <intent-filter>
                 <data android:scheme="package"/>
@@ -54,8 +54,19 @@
                 <action android:name="android.intent.action.PACKAGE_CHANGED" />
                 <action android:name="android.intent.action.PACKAGE_FULLY_REMOVED" />
             </intent-filter>
+        </receiver>
+
+        <receiver android:name="com.runnirr.xvoiceplus.receivers.BootCompletedReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name="com.runnirr.xvoiceplus.receivers.UserPollReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.runnirr.xvoiceplus.USER_POLL" />
             </intent-filter>
         </receiver>
     </application>

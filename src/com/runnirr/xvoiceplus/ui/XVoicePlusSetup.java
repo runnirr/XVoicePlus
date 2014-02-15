@@ -1,5 +1,7 @@
 package com.runnirr.xvoiceplus.ui;
 
+import com.runnirr.xvoiceplus.receivers.UserPollReceiver;
+
 import android.app.Activity;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
@@ -35,5 +37,8 @@ public class XVoicePlusSetup extends Activity implements OnSharedPreferenceChang
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         mVPFragment.updateSummary(key);
+        if (key.equals("settings_polling_frequency")) {
+            UserPollReceiver.startAlarmManager(this);
+        }
     }
 }

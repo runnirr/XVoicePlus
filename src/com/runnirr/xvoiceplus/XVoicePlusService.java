@@ -14,8 +14,10 @@ import android.util.Log;
 import com.runnirr.xvoiceplus.gv.GoogleVoiceManager;
 import com.runnirr.xvoiceplus.gv.GvResponse.Conversation;
 import com.runnirr.xvoiceplus.gv.GvResponse.Message;
+import com.runnirr.xvoiceplus.receivers.BootCompletedReceiver;
 import com.runnirr.xvoiceplus.receivers.MessageEventReceiver;
 import com.runnirr.xvoiceplus.receivers.PackageChangeReceiver;
+import com.runnirr.xvoiceplus.receivers.UserPollReceiver;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -72,6 +74,10 @@ public class XVoicePlusService extends IntentService {
             startRefresh(false);
             MessageEventReceiver.completeWakefulIntent(intent);
         }
+        else if (UserPollReceiver.USER_POLL.equals(intent.getAction())) {
+            startRefresh(true);
+            UserPollReceiver.completeWakefulIntent(intent);
+        }
         else if (MessageEventReceiver.INCOMING_VOICE.equals(intent.getAction())) {
             Message m = new Message();
 
@@ -88,9 +94,9 @@ public class XVoicePlusService extends IntentService {
             }
             MessageEventReceiver.completeWakefulIntent(intent);
         }
-        else if (PackageChangeReceiver.BOOT_COMPLETED.equals(intent.getAction())) {
+        else if (BootCompletedReceiver.BOOT_COMPLETED.equals(intent.getAction())) {
             startRefresh(false);
-            PackageChangeReceiver.completeWakefulIntent(intent);
+            BootCompletedReceiver.completeWakefulIntent(intent);
         }
         else if (GoogleVoiceManager.ACCOUNT_CHANGED.equals(intent.getAction())) {
             GVManager = new GoogleVoiceManager(this);

@@ -22,6 +22,15 @@
         android:defaultValue="@string/outgoing_settings_default_value"
         android:persistent="true"/>
 
+    <ListPreference
+        android:dependency="settings_enabled"
+        android:key="settings_polling_frequency"
+        android:title="@string/settings_polling_frequency"
+        android:entries="@array/polling_frequency_choices"
+        android:entryValues="@array/polling_frequency_values"
+        android:defaultValue="@string/default_polling_frequency"
+        android:persistent="true"/>
+
 <!--    
     <SwitchPreference 
         android:dependency="settings_enabled"
