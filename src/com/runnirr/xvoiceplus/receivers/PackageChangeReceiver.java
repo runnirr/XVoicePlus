@@ -5,7 +5,6 @@ import com.runnirr.xvoiceplus.XVoicePlus;
 import com.runnirr.xvoiceplus.XVoicePlusService;
 import com.runnirr.xvoiceplus.ui.XVoicePlusSetup;
 
-import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;

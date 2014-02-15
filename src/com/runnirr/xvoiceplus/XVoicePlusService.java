@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Bundle;
 import android.util.Log;
 
 import com.runnirr.xvoiceplus.gv.GoogleVoiceManager;
@@ -72,7 +73,19 @@ public class XVoicePlusService extends IntentService {
             MessageEventReceiver.completeWakefulIntent(intent);
         }
         else if (MessageEventReceiver.INCOMING_VOICE.equals(intent.getAction())) {
-            startRefresh(true);
+            Message m = new Message();
+
+            Bundle b = intent.getExtras();
+            m.date = b.getLong("time");
+            m.phoneNumber = b.getString("sender");
+            m.type = b.getInt("type");
+            m.message = b.getString("message");
+
+            if (m.type == VOICE_INCOMING_SMS) {
+                synthesizeMessage(m);
+            } else {
+                startRefresh(true);
+            }
             MessageEventReceiver.completeWakefulIntent(intent);
         }
         else if (PackageChangeReceiver.BOOT_COMPLETED.equals(intent.getAction())) {
