@@ -50,7 +50,7 @@
 
     <string-array name="polling_frequency_choices">
         <item name="never">Never</item>
-        <item name="10_seconds">10 seconds</item>
+        <!-- <item name="10_seconds">10 seconds</item> -->
         <item name="15_minutes">15 minutes</item>
         <item name="1_hour">1 hour</item>
         <item name="4_hours">4 hours</item>
@@ -60,7 +60,7 @@
     <string name="default_polling_frequency">-1</string>
     <string-array name="polling_frequency_values">
         <item name="never">@string/default_polling_frequency</item>
-        <item name="10_seconds">10000</item>
+        <!-- <item name="10_seconds">10000</item> -->
         <item name="15_minutes">900000</item>
         <item name="1_hour">3600000</item>
         <item name="4_hours">14400000</item>

@@ -16,14 +16,12 @@ import com.runnirr.xvoiceplus.gv.GvResponse.Conversation;
 import com.runnirr.xvoiceplus.gv.GvResponse.Message;
 import com.runnirr.xvoiceplus.receivers.BootCompletedReceiver;
 import com.runnirr.xvoiceplus.receivers.MessageEventReceiver;
-import com.runnirr.xvoiceplus.receivers.PackageChangeReceiver;
 import com.runnirr.xvoiceplus.receivers.UserPollReceiver;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -71,11 +69,10 @@ public class XVoicePlusService extends IntentService {
         // handle an outgoing sms
         if (MessageEventReceiver.OUTGOING_SMS.equals(intent.getAction())) {
             handleOutgoingSms(intent);
-            startRefresh(false);
             MessageEventReceiver.completeWakefulIntent(intent);
         }
         else if (UserPollReceiver.USER_POLL.equals(intent.getAction())) {
-            startRefresh(true);
+            startRefresh();
             UserPollReceiver.completeWakefulIntent(intent);
         }
         else if (MessageEventReceiver.INCOMING_VOICE.equals(intent.getAction())) {
@@ -90,12 +87,12 @@ public class XVoicePlusService extends IntentService {
             if (m.type == VOICE_INCOMING_SMS) {
                 synthesizeMessage(m);
             } else {
-                startRefresh(true);
+                startRefresh();
             }
             MessageEventReceiver.completeWakefulIntent(intent);
         }
         else if (BootCompletedReceiver.BOOT_COMPLETED.equals(intent.getAction())) {
-            startRefresh(false);
+            startRefresh();
             BootCompletedReceiver.completeWakefulIntent(intent);
         }
         else if (GoogleVoiceManager.ACCOUNT_CHANGED.equals(intent.getAction())) {
@@ -158,6 +155,13 @@ public class XVoicePlusService extends IntentService {
                 return true;
             }
             return false;
+        }
+    }
+    
+    private void removeAllRecent() {
+        synchronized(recentLock) {
+            SharedPreferences savedRecent = getRecentMessages();
+            savedRecent.edit().remove("recent").apply();
         }
     }
 
@@ -289,11 +293,10 @@ public class XVoicePlusService extends IntentService {
     }
     
     private void deleteGvMessageIfNeeded(Message message) {
-        // NOTE: This method is went through limited testing and
-        // doesn't seem to work. Its not being used anywhere
+        // NOTE: This method doesn't seem to work.
         try {
             if (messageExists(message)) {
-                // If the message is in Google Voice, and on on the phone,
+                // If the message is in Google Voice, and not on the phone,
                 // assume it was deleted by the user
                 
                 Log.d(TAG, "Deleting conversation " + message.conversationId);
@@ -346,9 +349,6 @@ public class XVoicePlusService extends IntentService {
             if (message.type == VOICE_OUTGOING_SMS) {
                 if (!removeRecent(message.message)) {
                     insertMessage(message);
-                    Log.d(TAG, "Inserted message " + message.message);
-                } else {
-                    Log.d(TAG, "Removed message " + message.message);
                 }
             } else if (message.type == VOICE_INCOMING_SMS) {
                 synthesizeMessage(message);
@@ -359,20 +359,12 @@ public class XVoicePlusService extends IntentService {
             .putLong("timestamp", max)
             .apply();
     }
-    
-    private volatile long lastRun = 0L;
-    private final long runDelta = 60 * 1000L; // Refresh no more than every 60 seconds
-    void startRefresh(boolean force) {
-        long now = new Date().getTime();
-        if (force || now - lastRun > runDelta) {
-            try {
-                updateMessages();
-            }
-            catch (Exception e) {
-                Log.e(TAG, "Error refreshing messages", e);
-            }
-            lastRun = now;
+
+    void startRefresh() {
+        try {
+            updateMessages();
+        } catch (Exception e) {
+            Log.e(TAG, "Error refreshing messages", e);
         }
     }
-    
 }
