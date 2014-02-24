@@ -53,7 +53,7 @@ public class XVoicePlusService extends IntentService {
 
     // parse out the intent extras from android.intent.action.NEW_OUTGOING_SMS
     // and send it off via google voice
-    void handleOutgoingSms(Intent intent) {
+    private void handleOutgoingSms(Intent intent) {
         boolean multipart = intent.getBooleanExtra("multipart", false);
         String destAddr = intent.getStringExtra("destAddr");
         String scAddr = intent.getStringExtra("scAddr");
@@ -77,14 +77,19 @@ public class XVoicePlusService extends IntentService {
         }
         else if (MessageEventReceiver.INCOMING_VOICE.equals(intent.getAction())) {
             Message m = new Message();
+            Bundle extras = intent.getExtras();
 
-            Bundle b = intent.getExtras();
-            m.date = b.getLong("time");
-            m.phoneNumber = b.getString("sender");
-            m.type = b.getInt("type");
-            m.message = b.getString("message");
+            m.date = Long.valueOf(extras.getString("call_time"));
+            m.phoneNumber = extras.getString("sender_address");
+            m.type = Integer.valueOf(extras.getString("call_type"));
+            m.message = extras.getString("call_content");
+            m.id = extras.getString("call_id");
 
             if (m.type == VOICE_INCOMING_SMS) {
+                Log.i(TAG, "Handling push message");
+                Set<String> recentPushMessages = getRecentMessages().getStringSet("push_messages", new HashSet<String>());
+                recentPushMessages.add(m.id);
+                getRecentMessages().edit().putStringSet("push_messages", recentPushMessages).apply();
                 synthesizeMessage(m);
             } else {
                 startRefresh();
@@ -157,16 +162,9 @@ public class XVoicePlusService extends IntentService {
             return false;
         }
     }
-    
-    private void removeAllRecent() {
-        synchronized(recentLock) {
-            SharedPreferences savedRecent = getRecentMessages();
-            savedRecent.edit().remove("recent").apply();
-        }
-    }
 
     // send an outgoing sms event via google voice
-    public void onSendMultipartText(String destAddr, String scAddr, List<String> texts,
+    private void onSendMultipartText(String destAddr, String scAddr, List<String> texts,
             final List<PendingIntent> sentIntents, final List<PendingIntent> deliveryIntents,
             boolean multipart) {
         // combine the multipart text into one string
@@ -291,21 +289,6 @@ public class XVoicePlusService extends IntentService {
             }
         }
     }
-    
-    private void deleteGvMessageIfNeeded(Message message) {
-        // NOTE: This method doesn't seem to work.
-        try {
-            if (messageExists(message)) {
-                // If the message is in Google Voice, and not on the phone,
-                // assume it was deleted by the user
-                
-                Log.d(TAG, "Deleting conversation " + message.conversationId);
-                GVManager.deleteGvMessage(message.conversationId);
-            }
-        } catch (Exception e) {
-            Log.w(TAG, "Error deleting message " + message.id, e);
-        }
-    }
 
     private void updateMessages() throws Exception {
         List<Conversation> conversations = GVManager.retrieveMessages();
@@ -351,13 +334,17 @@ public class XVoicePlusService extends IntentService {
                     insertMessage(message);
                 }
             } else if (message.type == VOICE_INCOMING_SMS) {
-                synthesizeMessage(message);
+                Set<String> recentPushMessages = getRecentMessages().getStringSet("push_messages", new HashSet<String>());
+                if (recentPushMessages.remove(message.id)) {
+                    // We already synthesized this message
+                    getRecentMessages().edit().putStringSet("push_messages", recentPushMessages).apply();
+                } else {
+                    synthesizeMessage(message);
+                }
             }
         }
 
-        getAppSettings().edit()
-            .putLong("timestamp", max)
-            .apply();
+        getAppSettings().edit().putLong("timestamp", max).apply();
     }
 
     void startRefresh() {

@@ -25,7 +25,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.XResources;
 import android.os.Build;
-import android.os.Bundle;
 import android.telephony.SmsManager;
 import android.telephony.SmsMessage;
 import android.util.Log;
@@ -62,22 +61,13 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
             protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
                 Log.d(TAG, "Received incoming Google Voice notification");
                 Context context = (Context) param.args[0];
-                Intent intent = (Intent) param.args[1];
-                Bundle extras = intent.getExtras();
+                Intent gvIntent = (Intent) param.args[1];
 
-                long start_time = Long.valueOf(extras.getString("call_time"));
-                String sender = extras.getString("sender_address");
-                int type = Integer.valueOf(extras.getString("call_type"));
-                String message = extras.getString("call_content");
+                Intent intent = new Intent()
+                    .setAction(MessageEventReceiver.INCOMING_VOICE)
+                    .putExtras(gvIntent.getExtras());
 
-                Intent incomingGvIntent = new Intent()
-                        .setAction(MessageEventReceiver.INCOMING_VOICE)
-                        .putExtra("time", start_time)
-                        .putExtra("sender", sender)
-                        .putExtra("type", type)
-                        .putExtra("message", message);
-
-                context.sendOrderedBroadcast(incomingGvIntent, null);
+                context.sendOrderedBroadcast(intent, null);
             }
         });
     }
