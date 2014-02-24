@@ -14,7 +14,6 @@
      limitations under the License.
 -->
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-    <string name="app_name">Voice+</string>
     <string name="enable_voice_plus">Aktywuj Voice+</string>
     <string name="info">Voice+ pozwala wszystkim aplikacjom wysyłać wiadomości SMS przez Google Voice</string>
     <string name="disable">Wyłączony</string>

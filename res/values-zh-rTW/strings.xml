@@ -14,7 +14,6 @@
      limitations under the License.
 -->
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-    <string name="app_name">Voice+</string>
     <string name="enable_voice_plus">啟用由 CyanogenMod 提供的 Voice+</string>
     <string name="info">Voice+ 允許所有應用程式透過 Google Voice 傳送簡訊</string>
     <string name="disable">停用</string>

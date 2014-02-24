@@ -13,8 +13,7 @@
      See the License for the specific language governing permissions and
      limitations under the License.
 -->
-<resources>
-    <string name="app_name">Voice+</string>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="enable_voice_plus">Ενεργοποίηση του Cyanogenmod Voice+</string>
     <string name="info">Το Voice+ επιτρέπει σε όλες τις εφαρμογές την αποστολή SMS μέσω του Google Voice</string>
     <string name="disable">Απενεργοποίηση</string>

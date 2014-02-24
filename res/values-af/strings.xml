@@ -14,7 +14,6 @@
      limitations under the License.
 -->
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-    <string name="app_name">Voice+</string>
     <string name="enable_voice_plus">Aktiveer Voice+ deur CyanogenMod</string>
     <string name="info">Stel Voice+ in staat om alle program SMS-boodskappe te stuur d.m.v. Google Voice</string>
     <string name="disable">Deaktiveer</string>

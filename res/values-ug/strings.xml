@@ -14,7 +14,6 @@
      limitations under the License.
 -->
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-    <string name="app_name">Voice+</string>
     <string name="enable_voice_plus">CyanogenMod نىڭ Voice+ نى ئاكتىپلا</string>
     <string name="info">Voice+ بارلىق ئەپلەرنىڭ Google Voice ئارقىلىق قىسقا ئۇچۇر يوللىشىنى قوزغىتىدۇ</string>
     <string name="disable">چەكلە</string>
