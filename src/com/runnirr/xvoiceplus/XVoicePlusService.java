@@ -42,13 +42,21 @@ public class XVoicePlusService extends IntentService {
     public XVoicePlusService(String name) {
         super(name);
     }
-    
+
     private SharedPreferences getAppSettings() {
         return getSharedPreferences("settings", MODE_PRIVATE);
     }
-    
+
     private SharedPreferences getRecentMessages() {
         return getSharedPreferences("recent_messages", MODE_PRIVATE);
+    }
+
+    private Set<String> getPushMessages() {
+        return getRecentMessages().getStringSet("push_messages", new HashSet<String>());
+    }
+
+    private void editPushMessages(Set<String> newSet) {
+        getRecentMessages().edit().putStringSet("push_messages", newSet).apply();
     }
 
     // parse out the intent extras from android.intent.action.NEW_OUTGOING_SMS
@@ -87,9 +95,9 @@ public class XVoicePlusService extends IntentService {
 
             if (m.type == VOICE_INCOMING_SMS) {
                 Log.i(TAG, "Handling push message");
-                Set<String> recentPushMessages = getRecentMessages().getStringSet("push_messages", new HashSet<String>());
+                Set<String> recentPushMessages = getPushMessages();
                 recentPushMessages.add(m.id);
-                getRecentMessages().edit().putStringSet("push_messages", recentPushMessages).apply();
+                editPushMessages(recentPushMessages);
                 synthesizeMessage(m);
             } else {
                 startRefresh();
@@ -136,8 +144,6 @@ public class XVoicePlusService extends IntentService {
             }
         }
     }
-
-    
 
     // mark an outgoing text as recently sent, so if it comes in via
     // round trip, we ignore it.
@@ -334,10 +340,11 @@ public class XVoicePlusService extends IntentService {
                     insertMessage(message);
                 }
             } else if (message.type == VOICE_INCOMING_SMS) {
-                Set<String> recentPushMessages = getRecentMessages().getStringSet("push_messages", new HashSet<String>());
+                Set<String> recentPushMessages = getPushMessages();
                 if (recentPushMessages.remove(message.id)) {
                     // We already synthesized this message
-                    getRecentMessages().edit().putStringSet("push_messages", recentPushMessages).apply();
+                    Log.d(TAG, "Message " + message.id + " was already pushed.");
+                    editPushMessages(recentPushMessages);
                 } else {
                     synthesizeMessage(message);
                 }
