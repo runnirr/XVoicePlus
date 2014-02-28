@@ -3,6 +3,7 @@
     <SwitchPreference
         android:key="settings_enabled"
         android:title="@string/settings_enable_toggle"
+        android:summary="@string/settings_enable_toggle_summary"
         android:defaultValue="false"
         android:persistent="true"
         android:disableDependentsState="false"/>
@@ -11,15 +12,6 @@
         android:dependency="settings_enabled"
         android:key="account"
         android:title="@string/account"
-        android:persistent="true"/>
-
-    <ListPreference
-        android:dependency="settings_enabled"
-        android:key="settings_outbound_messages"
-        android:title="@string/settings_outbound_message"
-        android:entries="@array/outbound_settings_choices"
-        android:entryValues="@array/outbound_settings_values"
-        android:defaultValue="@string/outgoing_settings_default_value"
         android:persistent="true"/>
 
     <ListPreference
@@ -39,5 +31,6 @@
         android:summaryOn="@string/settings_propagate_delete_summary_on"
         android:summaryOff="@string/settings_propagate_delete_summary_off"
         android:defaultValue="false"
-        android:persistent="true"/> -->
+        android:persistent="true"/>
+-->
 </PreferenceScreen>

@@ -22,31 +22,11 @@
     <string name="xvoiceplus_started">XVoice+ is now running. SMS messages will be sent through Google Voice.</string>
 
     <string name="settings_enable_toggle">Enable XVoice+</string>
-    <string name="settings_outbound_message">Sending Messages</string>
+    <string name="settings_enable_toggle_summary">Reboot after changing</string>
     <string name="settings_propagate_delete">Propagate Delete</string>
     <string name="settings_propagate_delete_summary_on">Deleted message will be deleted on Google Voice</string>
     <string name="settings_propagate_delete_summary_off">Deleted message will not affect Google Voice</string>
     <string name="settings_polling_frequency">Polling Frequency</string>
-
-    <string name="outgoing_carrier">Send via carrier</string>
-    <string name="outgoing_voice">Send via Google Voice</string>
-    <string name="outgoing_prompt">Prompt on outgoing messages</string>
-    <string-array name="outbound_prompt_choices">
-        <item name="prompt_carrier">Send via carrier</item>
-        <item name="prompt_google_voice">Send via Google Voice</item>
-    </string-array>
-
-    <string-array name="outbound_settings_choices">
-        <item name="outgoing_carrier">@string/outgoing_carrier</item>
-        <item name="outgoing_voice">@string/outgoing_voice</item>
-        <!-- <item name="outgoing_prompt">@string/outgoing_prompt</item> -->
-    </string-array>
-    <string name="outgoing_settings_default_value">1</string>
-    <string-array name="outbound_settings_values">
-        <item name="outgoing_carrier">0</item>
-        <item name="outgoing_voice">1</item>
-        <!-- <item name="outgoing_prompt">2</item> -->
-    </string-array>
 
     <string-array name="polling_frequency_choices">
         <item name="never">Never</item>

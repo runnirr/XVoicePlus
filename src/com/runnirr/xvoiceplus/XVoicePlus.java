@@ -22,7 +22,6 @@ import android.app.AppOpsManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.res.XResources;
 import android.os.Build;
 import android.telephony.SmsManager;
@@ -43,7 +42,7 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
 
     private static final String PERM_BROADCAST_SMS = "android.permission.BROADCAST_SMS";
 
-    private SharedPreferences mUserPreferences;
+    private boolean mEnabled;
 
     @Override
     public void handleLoadPackage(LoadPackageParam lpparam) throws ClassNotFoundException {
@@ -75,7 +74,7 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
     @Override
     public void initZygote(StartupParam startupParam) {
         XResources.setSystemWideReplacement("android", "bool", "config_sms_capable", true);
-        mUserPreferences = new XSharedPreferences("com.runnirr.xvoiceplus");
+        mEnabled = new XSharedPreferences("com.runnirr.xvoiceplus").getBoolean("settings_enabled", false);
 
         hookSendSms();
         hookXVoicePlusPermission();
@@ -173,19 +172,11 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
 
         @Override
         protected void beforeHookedMethod(final MethodHookParam param) throws Throwable {
-            switch (getOutgoingStrategy()) {
-
-            // TODO: Find a way to make prompt work
-            case (R.string.outgoing_prompt):
-            case (R.string.outgoing_voice):
-                Log.d(TAG, "Sending via Google Voice based on settings");
+            if (mEnabled) {
+                Log.d(TAG, "Sending via google voice");
                 attemptSendViaGoogleVoice(param);
-                return;
-            case (R.string.outgoing_carrier):
-            default:
-                // Stop the hooks and let it go through carrier
+            } else {
                 Log.d(TAG, "Sending via carrier based on settings");
-                return;
             }
         }
 
@@ -275,25 +266,6 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
             }
 
             return context;
-        }
-    }
-
-    private int getOutgoingStrategy() {
-        String outboundPref = mUserPreferences.getString("settings_outbound_messages", "0");
-        if (!mUserPreferences.getBoolean("settings_enabled", false) ||
-                mUserPreferences.getString("account", null) == null ||
-                outboundPref.equals("0")) {
-            // Not enabled or no account selected, or selected to send via carrier
-            return R.string.outgoing_carrier;
-        } else if (outboundPref.equals("1")) {
-            // User selected to send via Google Voice
-            return R.string.outgoing_voice;
-        } else if (outboundPref.equals("2")) {
-            // User selected to prompt before sending
-            return R.string.outgoing_prompt;
-        } else {
-            // Default to carrier if something is wrong in the settings
-            return R.string.outgoing_carrier;
         }
     }
 }
