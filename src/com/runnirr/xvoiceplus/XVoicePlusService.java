@@ -51,14 +51,6 @@ public class XVoicePlusService extends IntentService {
         return getSharedPreferences("recent_messages", MODE_PRIVATE);
     }
 
-    private Set<String> getPushMessages() {
-        return getRecentMessages().getStringSet("push_messages", new HashSet<String>());
-    }
-
-    private void editPushMessages(Set<String> newSet) {
-        getRecentMessages().edit().putStringSet("push_messages", newSet).apply();
-    }
-
     // parse out the intent extras from android.intent.action.NEW_OUTGOING_SMS
     // and send it off via google voice
     private void handleOutgoingSms(Intent intent) {
@@ -95,9 +87,11 @@ public class XVoicePlusService extends IntentService {
 
             if (m.type == VOICE_INCOMING_SMS) {
                 Log.i(TAG, "Handling push message");
-                Set<String> recentPushMessages = getPushMessages();
-                recentPushMessages.add(m.id);
-                editPushMessages(recentPushMessages);
+                synchronized (pushMessagesLock) {
+                    Set<String> recentPushMessages = getPushMessages();
+                    recentPushMessages.add(m.id);
+                    editPushMessages(recentPushMessages);
+                }
                 synthesizeMessage(m);
             } else {
                 startRefresh();
@@ -143,6 +137,15 @@ public class XVoicePlusService extends IntentService {
                 }
             }
         }
+    }
+    
+    private final Object pushMessagesLock = new Object();
+    private Set<String> getPushMessages() {
+        return getRecentMessages().getStringSet("push_messages", new HashSet<String>());
+    }
+
+    private void editPushMessages(Set<String> newSet) {
+        getRecentMessages().edit().putStringSet("push_messages", newSet).apply();
     }
 
     // mark an outgoing text as recently sent, so if it comes in via
@@ -340,13 +343,15 @@ public class XVoicePlusService extends IntentService {
                     insertMessage(message);
                 }
             } else if (message.type == VOICE_INCOMING_SMS) {
-                Set<String> recentPushMessages = getPushMessages();
-                if (recentPushMessages.remove(message.id)) {
-                    // We already synthesized this message
-                    Log.d(TAG, "Message " + message.id + " was already pushed.");
-                    editPushMessages(recentPushMessages);
-                } else {
-                    synthesizeMessage(message);
+                synchronized (pushMessagesLock) {
+                    Set<String> recentPushMessages = getPushMessages();
+                    if (recentPushMessages.remove(message.id)) {
+                        // We already synthesized this message
+                        Log.d(TAG, "Message " + message.id + " was already pushed.");
+                        editPushMessages(recentPushMessages);
+                    } else {
+                        synthesizeMessage(message);
+                    }
                 }
             }
         }
