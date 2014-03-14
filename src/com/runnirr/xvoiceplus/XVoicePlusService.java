@@ -8,7 +8,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
-import android.os.Bundle;
 import android.util.Log;
 
 import com.runnirr.xvoiceplus.gv.GoogleVoiceManager;
@@ -76,26 +75,7 @@ public class XVoicePlusService extends IntentService {
             UserPollReceiver.completeWakefulIntent(intent);
         }
         else if (MessageEventReceiver.INCOMING_VOICE.equals(intent.getAction())) {
-            Message m = new Message();
-            Bundle extras = intent.getExtras();
-
-            m.date = Long.valueOf(extras.getString("call_time"));
-            m.phoneNumber = extras.getString("sender_address");
-            m.type = Integer.valueOf(extras.getString("call_type"));
-            m.message = extras.getString("call_content");
-            m.id = extras.getString("call_id");
-
-            if (m.type == VOICE_INCOMING_SMS) {
-                Log.i(TAG, "Handling push message");
-                synchronized (pushMessagesLock) {
-                    Set<String> recentPushMessages = getPushMessages();
-                    recentPushMessages.add(m.id);
-                    editPushMessages(recentPushMessages);
-                }
-                synthesizeMessage(m);
-            } else {
-                startRefresh();
-            }
+            startRefresh();
             MessageEventReceiver.completeWakefulIntent(intent);
         }
         else if (BootCompletedReceiver.BOOT_COMPLETED.equals(intent.getAction())) {
@@ -140,13 +120,7 @@ public class XVoicePlusService extends IntentService {
     }
     
     private final Object pushMessagesLock = new Object();
-    private Set<String> getPushMessages() {
-        return getRecentMessages().getStringSet("push_messages", new HashSet<String>());
-    }
 
-    private void editPushMessages(Set<String> newSet) {
-        getRecentMessages().edit().putStringSet("push_messages", newSet).apply();
-    }
 
     // mark an outgoing text as recently sent, so if it comes in via
     // round trip, we ignore it.
@@ -344,11 +318,11 @@ public class XVoicePlusService extends IntentService {
                 }
             } else if (message.type == VOICE_INCOMING_SMS) {
                 synchronized (pushMessagesLock) {
-                    Set<String> recentPushMessages = getPushMessages();
+                    Set<String> recentPushMessages = getRecentMessages().getStringSet("push_messages", new HashSet<String>());
                     if (recentPushMessages.remove(message.id)) {
                         // We already synthesized this message
                         Log.d(TAG, "Message " + message.id + " was already pushed.");
-                        editPushMessages(recentPushMessages);
+                        getRecentMessages().edit().putStringSet("push_messages", recentPushMessages);
                     } else {
                         synthesizeMessage(message);
                     }
