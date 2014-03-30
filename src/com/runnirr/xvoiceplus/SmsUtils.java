@@ -68,19 +68,24 @@ public class SmsUtils {
         }
 
         Log.d(TAG, "Creating fake sms. Broadcasting...");
-        String action;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            action = "android.provider.Telephony.SMS_DELIVER";
-        } else {
-            action = "android.provider.Telephony.SMS_RECEIVED";
-        }
+            String deliver_action = "android.provider.Telephony.SMS_DELIVER";
+            Intent intent = new Intent()
+                .setAction(deliver_action)
+                .setFlags(0)
+                .putExtra("pdus", new Object[] { pdu })
+                .putExtra("format", FORMAT_3GPP);
+            context.sendBroadcast(intent, "android.permission.BROADCAST_SMS");
 
+        }
+        
+        String received_action = "android.provider.Telephony.SMS_RECEIVED";
         Intent intent = new Intent()
-            .setAction(action)
+            .setAction(received_action)
             .setFlags(0)
             .putExtra("pdus", new Object[] { pdu })
             .putExtra("format", FORMAT_3GPP);
-        context.sendOrderedBroadcast(intent, "android.permission.RECEIVE_SMS");
+        context.sendBroadcast(intent, "android.permission.RECEIVE_SMS");
     }
 
     private static byte reverseByte(byte b) {
