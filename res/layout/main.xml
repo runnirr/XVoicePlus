@@ -8,19 +8,19 @@
 
 
     <TextView
-            android:gravity="center"
+            android:gravity="left"
             android:paddingTop="16dp"
-            android:paddingBottom="16dp"
+            android:paddingBottom="8dp"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:text="@string/info"
+            android:text="@string/select_account"
             style="@android:style/TextAppearance.Medium"/>
 
     <View
             android:layout_width="fill_parent"
             android:layout_height="1dp"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="12dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="4dp"
             android:background="@android:color/holo_blue_dark"/>
 
     <LinearLayout
@@ -45,12 +45,6 @@
                 android:layout_marginBottom="12dp"
                 android:background="@android:color/holo_blue_dark"/>
     </LinearLayout>
-
-    <TextView
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/account"
-            style="@android:style/TextAppearance.Small"/>
 
     <ListView
             android:choiceMode="singleChoice"
