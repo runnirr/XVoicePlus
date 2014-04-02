@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Voice+</string>
+    <string name="enable_voice_plus">Aktivovať Voice+ od CyanogenMod</string>
+    <string name="info">Voice+ povolí všetkým aplikáciám odosielanie SMS prostredníctvom Google Voice</string>
+    <string name="disable">Zakázať</string>
+    <string name="account">Účet</string>
+
+    <string name="not_granted">Povolenie nie je k dispozícii:\n%s</string>
+</resources>
