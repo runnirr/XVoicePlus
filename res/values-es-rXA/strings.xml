@@ -16,9 +16,9 @@
      limitations under the License.
 -->
 <resources>
-  <string name="enable_voice_plus">Activa Voice+ de CyanogenMod</string>
-  <string name="info">Voice+ permet a totes les apps enviar misstages SMS a través de Google Voice</string>
-  <string name="disable">Desactiva</string>
-  <string name="account">Compte</string>
-  <string name="not_granted">Permís no disponible:\n%s</string>
+  <string name="enable_voice_plus">Activar Voice+ de CyanogenMod</string>
+  <string name="info">Voice+ permite a les aplicaciones unviar mensaxes SMS per aciu de Google Voice</string>
+  <string name="disable">Desactivada</string>
+  <string name="account">Cuenta</string>
+  <string name="not_granted">Permisu non disponible:\n%s</string>
 </resources>
