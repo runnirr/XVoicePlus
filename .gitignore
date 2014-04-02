@@ -10,3 +10,6 @@ gradlew
 gradlew.bat
 
 .project
+
+.idea/workspace.xml
+.idea/tasks.xml
