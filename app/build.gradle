@@ -2,7 +2,7 @@ apply plugin: 'android'
 
 android {
     compileSdkVersion 19
-    buildToolsVersion "19.0.3"
+    buildToolsVersion '19.0.3'
 
     defaultConfig {
         minSdkVersion 15
@@ -22,5 +22,5 @@ dependencies {
     compile 'com.google.code.gson:gson:2.2.4'
     compile files('libs/androidasync-1.2.0.jar')
     compile files('libs/ion-1.2.0.jar')
-    compile files('XposedBridgeApi.jar')
+    provided files('XposedBridgeApi.jar')
 }
