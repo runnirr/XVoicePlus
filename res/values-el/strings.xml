@@ -18,6 +18,7 @@
 <resources>
   <string name="enable_voice_plus">Ενεργοποίηση του Cyanogenmod Voice+</string>
   <string name="info">Το Voice+ επιτρέπει σε όλες τις εφαρμογές την αποστολή SMS μέσω του Google Voice</string>
+  <string name="select_account">Επιλέξτε λογαριασμό</string>
   <string name="disable">Απενεργοποίηση</string>
   <string name="account">Λογαριασμός</string>
   <string name="not_granted">Η άδεια δεν είναι διαθέσιμη:\n%s</string>

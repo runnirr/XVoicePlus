@@ -16,10 +16,5 @@
      limitations under the License.
 -->
 <resources>
-  <string name="enable_voice_plus">Включить Voice+ от CyanogenMod</string>
-  <string name="info">Voice+ позволяет отправлять SMS-сообщения, используя Google Voice</string>
-  <string name="select_account">Выберите учетную запись</string>
-  <string name="disable">Выключить</string>
-  <string name="account">Аккаунт</string>
-  <string name="not_granted">Разрешение недоступно:\n%s</string>
+  <string name="disable">Desativar</string>
 </resources>

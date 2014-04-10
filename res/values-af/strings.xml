@@ -18,6 +18,7 @@
 <resources>
   <string name="enable_voice_plus">Aktiveer Voice+ deur CyanogenMod</string>
   <string name="info">Stel Voice+ in staat om alle program SMS-boodskappe te stuur d.m.v. Google Voice</string>
+  <string name="select_account">Kies Rekening</string>
   <string name="disable">Deaktiveer</string>
   <string name="account">Rekening</string>
   <string name="not_granted">Toestemming nie beskikbaar vir:\n%s</string>
