@@ -93,7 +93,7 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
 
             @Override
             protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                if(XVOICE_PLUS_PACKAGE.equals((String) param.args[1]) &&
+                if(XVOICE_PLUS_PACKAGE.equals(param.args[1]) &&
                         (Integer) param.args[2] == SmsUtils.OP_WRITE_SMS) {
 
                     setIntField(param.thisObject, "mode", AppOpsManager.MODE_ALLOWED);
@@ -108,7 +108,7 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
 
             @Override
             protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                if(!SmsUtils.FORMAT_3GPP.equals((String) param.args[1])) {
+                if(!SmsUtils.FORMAT_3GPP.equals(param.args[1])) {
                     try {
                         Log.d(TAG, "Trying to parse pdu in GSM 3GPP");
                         SmsMessage result = (SmsMessage) callStaticMethod(SmsMessage.class, "createFromPdu", param.args[0], SmsUtils.FORMAT_3GPP);
@@ -149,7 +149,7 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
                         grantedPerms.add(PERM_BROADCAST_SMS);
                         int[] gpGids = (int[]) getObjectField(extras, "gids");
                         int[] bpGids = (int[]) getObjectField(pAccessBroadcastSms, "gids");
-                        gpGids = (int[]) callStaticMethod(param.thisObject.getClass(), 
+                        gpGids = (int[]) callStaticMethod(param.thisObject.getClass(),
                                 "appendInts", gpGids, bpGids);
                     }
                 }
@@ -240,7 +240,7 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
 
         private Context getContext(){
             // Try to get a context in one way or another from system
-            Context context = null;
+            Context context;
 
             // Seems to work for 4.4
             Log.i(TAG, "Trying to get context from AndroidAppHelper");
