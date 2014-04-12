@@ -241,7 +241,7 @@ public class XVoicePlusService extends IntentService {
     void synthesizeMessage(Message m) {
         if (!messageExists(m, URI_RECEIVED)){
             try{
-                SmsUtils.createFakeSms(this, m.phoneNumber, m.message, m.date);
+                SmsUtils.createFakeSms(this, m.phoneNumber, "(GV) " + m.message, m.date);
             } catch (IOException e){
                 Log.e(TAG, "IOException when creating fake sms, ignoring");
             }
