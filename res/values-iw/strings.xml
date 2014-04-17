@@ -18,6 +18,7 @@
 <resources>
   <string name="enable_voice_plus">הפעל Voice+ על ידי CyanogenMod</string>
   <string name="info">Voice+ מאפשר לכל היישומים לשלוח הודעות SMS דרך Google Voice</string>
+  <string name="select_account">בחר חשבון</string>
   <string name="disable">השבת</string>
   <string name="account">חשבון</string>
   <string name="not_granted">הרשאה נחסמה:\n%s</string>
