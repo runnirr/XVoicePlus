@@ -32,8 +32,8 @@ import java.util.Set;
 public class XVoicePlusService extends IntentService {
     private static final String TAG = XVoicePlusService.class.getName();
     
-    private GoogleVoiceManager GVManager = new GoogleVoiceManager(this);
-    
+    private GoogleVoiceManager mGVManager = new GoogleVoiceManager(this);
+
     public XVoicePlusService() {
         this("XVoicePlusService");
     }
@@ -65,6 +65,7 @@ public class XVoicePlusService extends IntentService {
 
     @Override
     protected void onHandleIntent(final Intent intent) {
+        Log.d(TAG, "Handling intent for action " + intent.getAction());
         // handle an outgoing sms
         if (MessageEventReceiver.OUTGOING_SMS.equals(intent.getAction())) {
             handleOutgoingSms(intent);
@@ -83,7 +84,7 @@ public class XVoicePlusService extends IntentService {
             BootCompletedReceiver.completeWakefulIntent(intent);
         }
         else if (GoogleVoiceManager.ACCOUNT_CHANGED.equals(intent.getAction())) {
-            GVManager = new GoogleVoiceManager(this);
+            mGVManager = new GoogleVoiceManager(this);
         }
     }
 
@@ -126,24 +127,20 @@ public class XVoicePlusService extends IntentService {
     // round trip, we ignore it.
     private final Object recentLock = new Object();
     private void addRecent(String text) {
-        synchronized(recentLock) {
-            SharedPreferences savedRecent = getRecentMessages();
-            Set<String> recentMessage = savedRecent.getStringSet("recent", new HashSet<String>());
-            recentMessage.add(text);
-            savedRecent.edit().putStringSet("recent", recentMessage).apply();
-        }
+        SharedPreferences savedRecent = getRecentMessages();
+        Set<String> recentMessage = savedRecent.getStringSet("recent", new HashSet<String>());
+        recentMessage.add(text);
+        savedRecent.edit().putStringSet("recent", recentMessage).apply();
     }
 
     private boolean removeRecent(String text) {
-        synchronized(recentLock) {
-            SharedPreferences savedRecent = getRecentMessages();
-            Set<String> recentMessage = savedRecent.getStringSet("recent", new HashSet<String>());
-            if (recentMessage.remove(text)) {
-                savedRecent.edit().putStringSet("recent", recentMessage).apply();
-                return true;
-            }
-            return false;
+        SharedPreferences savedRecent = getRecentMessages();
+        Set<String> recentMessage = savedRecent.getStringSet("recent", new HashSet<String>());
+        if (recentMessage.remove(text)) {
+            savedRecent.edit().putStringSet("recent", recentMessage).apply();
+            return true;
         }
+        return false;
     }
 
     // send an outgoing sms event via google voice
@@ -160,7 +157,7 @@ public class XVoicePlusService extends IntentService {
         try {
             // send it off, and note that we recently sent this message
             // for round trip tracking
-            GVManager.sendGvMessage(destAddr, text);
+            mGVManager.sendGvMessage(destAddr, text);
             addRecent(text);
             success(sentIntents);
             return;
@@ -171,11 +168,10 @@ public class XVoicePlusService extends IntentService {
 
         try {
             // on failure, fetch info and try again
-            GVManager.refreshAuth();
-            synchronized (recentLock) {
-                GVManager.sendGvMessage(destAddr, text);
-                addRecent(text);
-            }
+            mGVManager.refreshAuth();
+            mGVManager.sendGvMessage(destAddr, text);
+            addRecent(text);
+
             success(sentIntents);
         }
         catch (Exception e) {
@@ -263,7 +259,7 @@ public class XVoicePlusService extends IntentService {
                     new String[] { String.valueOf(message.date), message.message }, null);
             try {
                 if(c.moveToFirst()){
-                    GVManager.markGvMessageRead(message.id, 1);
+                    mGVManager.markGvMessageRead(message.id, 1);
                 }
             } catch (Exception e) {
                 Log.w(TAG, "Error marking message as read. ID: " + message.id, e);
@@ -274,7 +270,9 @@ public class XVoicePlusService extends IntentService {
     }
 
     private void updateMessages() throws Exception {
-        List<Conversation> conversations = GVManager.retrieveMessages();
+        Log.d(TAG, "Updating messages");
+        List<Conversation> conversations = mGVManager.retrieveMessages();
+        Log.d(TAG, "Converstions: " + conversations);
 
         long timestamp = getAppSettings().getLong("timestamp", 0);
         LinkedList<Message> oldMessages = new LinkedList<Message>();
@@ -317,15 +315,13 @@ public class XVoicePlusService extends IntentService {
                     insertMessage(message);
                 }
             } else if (message.type == VOICE_INCOMING_SMS) {
-                synchronized (pushMessagesLock) {
-                    Set<String> recentPushMessages = getRecentMessages().getStringSet("push_messages", new HashSet<String>());
-                    if (recentPushMessages.remove(message.id)) {
-                        // We already synthesized this message
-                        Log.d(TAG, "Message " + message.id + " was already pushed.");
-                        getRecentMessages().edit().putStringSet("push_messages", recentPushMessages);
-                    } else {
-                        synthesizeMessage(message);
-                    }
+                Set<String> recentPushMessages = getRecentMessages().getStringSet("push_messages", new HashSet<String>());
+                if (recentPushMessages.remove(message.id)) {
+                    // We already synthesized this message
+                    Log.d(TAG, "Message " + message.id + " was already pushed.");
+                    getRecentMessages().edit().putStringSet("push_messages", recentPushMessages);
+                } else {
+                    synthesizeMessage(message);
                 }
             }
         }
@@ -334,6 +330,7 @@ public class XVoicePlusService extends IntentService {
     }
 
     void startRefresh() {
+        Log.d(TAG, "Starting refresh");
         try {
             updateMessages();
         } catch (Exception e) {

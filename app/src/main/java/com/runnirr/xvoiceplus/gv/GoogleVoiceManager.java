@@ -31,7 +31,7 @@ public class GoogleVoiceManager {
     public static final String ACCOUNT_CHANGED = "com.runnirr.xvoiceplus.ACCOUNT_CHANGED";
 
     private final Context mContext;
-    private String mRnrse;
+    private String mRnrse = null;
     
     public GoogleVoiceManager(Context context) {
         mContext = context;
@@ -42,8 +42,7 @@ public class GoogleVoiceManager {
     }
 
     private String getAccount() {
-        SharedPreferences sp = mContext.getSharedPreferences("settings", Context.MODE_PRIVATE);
-        return sp.getString("account", null);
+        return getSettings().getString("account", null);
     }
     
     public boolean refreshAuth() {
@@ -155,21 +154,13 @@ public class GoogleVoiceManager {
         .setBodyParameter("_rnr_se", getRnrse());
     }
     
-    public void deleteGvMessage(String id) throws Exception {
-        final String authToken = getAuthToken();
-        Ion.with(mContext, "https://www.google.com/voice/inbox/deleteMessages/")
-        .onHeaders(new GvHeadersCallback(mContext, authToken))
-        .setHeader("Authorization", "GoogleLogin auth=" + authToken)
-        .setBodyParameter("messages", id)
-        .setBodyParameter("trash", "1")
-        .setBodyParameter("_rnr_se", getRnrse());
-    }
-    
     // refresh the messages that were on the server
     public List<Conversation> retrieveMessages() throws Exception {
         String account = getAccount();
-        if (account == null)
+        Log.d(TAG, "Retrieving messages for account " + account);
+        if (account == null) {
             return new ArrayList<Conversation>();
+        }
 
         Log.i(TAG, "Refreshing messages");
 
