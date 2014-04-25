@@ -86,6 +86,9 @@ public class XVoicePlusService extends IntentService {
         else if (GoogleVoiceManager.ACCOUNT_CHANGED.equals(intent.getAction())) {
             mGVManager = new GoogleVoiceManager(this);
         }
+        else {
+            startRefresh();
+        }
     }
 
     // mark all sent intents as failures
@@ -197,12 +200,14 @@ public class XVoicePlusService extends IntentService {
     boolean messageExists(Message m, Uri uri) {
         Cursor c = getContentResolver().query(uri, null, "date = ? AND body = ?",
                 new String[] { String.valueOf(m.date), m.message }, null);
-        try {
-            return c.moveToFirst();
+        if (c != null) {
+            try {
+                return c.moveToFirst();
+            } finally {
+                c.close();
+            }
         }
-        finally {
-            c.close();
-        }
+        return false;
     }
 
     // insert a message into the sms/mms provider.
@@ -321,7 +326,8 @@ public class XVoicePlusService extends IntentService {
                     Log.d(TAG, "Message " + message.id + " was already pushed.");
                     getRecentMessages().edit().putStringSet("push_messages", recentPushMessages);
                 } else {
-                    synthesizeMessage(message);
+                    insertMessage(message);
+                    //synthesizeMessage(message);
                 }
             }
         }
