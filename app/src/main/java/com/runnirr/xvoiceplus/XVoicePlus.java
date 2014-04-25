@@ -105,9 +105,9 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
 
     private void hookSmsMessage(){
         findAndHookMethod(SmsMessage.class, "createFromPdu", byte[].class, String.class, new XC_MethodHook() {
-
             @Override
             protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                Log.d(TAG, "Create from PDU");
                 if(!SmsUtils.FORMAT_3GPP.equals(param.args[1])) {
                     try {
                         Log.d(TAG, "Trying to parse pdu in GSM 3GPP");
@@ -118,7 +118,7 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
                             Log.w(TAG, "Expected service center " + SmsUtils.SERVICE_CENTER + " for Google Voice message. Falling back to default format");
                         }
                     } catch (Throwable e) {
-                        Log.w(TAG, "Error parsing in GSM 3GPP. Falling back to default behavior");
+                        Log.w(TAG, "Error parsing in GSM 3GPP. Falling back to default behavior", e);
                     }
                 }
             }
