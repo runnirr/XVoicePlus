@@ -25,6 +25,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 
@@ -223,6 +224,7 @@ public class XVoicePlusService extends IntentService {
         if (m.type == VOICE_INCOMING_SMS) {
             uri = URI_RECEIVED;
             type = PROVIDER_INCOMING_SMS;
+            m.message = messageWithPreffixSuffix(m.message);
         } else if (m.type == VOICE_OUTGOING_SMS) {
             uri = URI_SENT;
             type = PROVIDER_OUTGOING_SMS;
@@ -245,11 +247,19 @@ public class XVoicePlusService extends IntentService {
     void synthesizeMessage(Message m) {
         if (!messageExists(m, URI_RECEIVED)){
             try{
-                SmsUtils.createFakeSms(this, m.phoneNumber, m.message, m.date);
+                SmsUtils.createFakeSms(this, m.phoneNumber, messageWithPreffixSuffix(m.message), m.date);
             } catch (IOException e) {
                 Log.e(TAG, "IOException when creating fake sms, ignoring");
             }
         }
+    }
+
+    private String messageWithPreffixSuffix(String message) {
+        SharedPreferences settings = getSettings();
+        return String.format(Locale.getDefault(), "%s%s%s",
+                settings.getString("settings_incoming_prefix", ""),
+                message,
+                settings.getString("settings_incoming_suffix", ""));
     }
     
     private void markReadIfNeeded(Message message){
