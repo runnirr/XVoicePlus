@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (C) 2013 The CyanogenMod Project
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+-->
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <string name="app_name">XVoice+</string>
+    <string name="info">XVoice+ enables all apps to send SMS messages through Google Voice</string>
+    <string name="disable">Disabled</string>
+    <string name="account">Account</string>
+    <string name="not_granted">Permission unavailable:\n%s</string>
+    <string name="xvoiceplus_started">XVoice+ is now running. SMS messages will be sent through Google Voice.</string>
+    <string name="empty"></string>
+
+    <string name="settings_enable_toggle">Enable XVoice+</string>
+    <string name="settings_enable_toggle_summary">Reboot after changing</string>
+    <string name="settings_propagate_delete">Propagate Delete</string>
+    <string name="settings_propagate_delete_summary_on">Deleted message will be deleted on Google Voice</string>
+    <string name="settings_propagate_delete_summary_off">Deleted message will not affect Google Voice</string>
+    <string name="settings_polling_frequency">Polling Frequency</string>
+    <string name="settings_incoming_prefix">Incoming Message Prefix</string>
+    <string name="settings_incoming_suffix">Incoming Message Suffix</string>
+
+    <string-array name="polling_frequency_choices">
+        <item name="never">Never</item>
+        <!-- <item name="10_seconds">10 seconds</item> -->
+        <item name="15_minutes">15 minutes</item>
+        <item name="1_hour">1 hour</item>
+        <item name="4_hours">4 hours</item>
+        <item name="12_hours">12 hours</item>
+        <item name="1_day">Daily</item>
+    </string-array>
+    <string name="default_polling_frequency">-1</string>
+    <string-array name="polling_frequency_values">
+        <item name="never">@string/default_polling_frequency</item>
+        <!-- <item name="10_seconds">10000</item> -->
+        <item name="15_minutes">900000</item>
+        <item name="1_hour">3600000</item>
+        <item name="4_hours">14400000</item>
+        <item name="12_hours">43200000</item>
+        <item name="1_day">86400000</item>
+    </string-array>
+
+</resources>
