@@ -8,6 +8,7 @@ import static de.robv.android.xposed.XposedHelpers.callMethod;
 import static de.robv.android.xposed.XposedHelpers.callStaticMethod;
 import static de.robv.android.xposed.XposedHelpers.getStaticObjectField;
 import static de.robv.android.xposed.XposedHelpers.setIntField;
+import static de.robv.android.xposed.XposedHelpers.setObjectField;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -26,12 +27,14 @@ import android.content.res.XResources;
 import android.os.Build;
 import android.telephony.SmsManager;
 import android.telephony.SmsMessage;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.IXposedHookZygoteInit;
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XSharedPreferences;
 import de.robv.android.xposed.XposedBridge;
+import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;
 
 public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit {
@@ -103,22 +106,42 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
         });
     }
 
-    private void hookSmsMessage(){
-        findAndHookMethod(SmsMessage.class, "createFromPdu", byte[].class, String.class, new XC_MethodHook() {
+    private void hookSmsMessage() {
+        final String INTERNAL_GSM_SMS_MESSAGE = "com.android.internal.telephony.gsm.SmsMessage";
+        final String createFromPdu = "createFromPdu";
+
+        findAndHookMethod(android.telephony.gsm.SmsMessage.class, createFromPdu, byte[].class, new XC_MethodHook() {
+            @Override
+            protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                Log.d(TAG, "After hook of telephony.gsm.SmsMessage");
+                android.telephony.gsm.SmsMessage originalResult = (android.telephony.gsm.SmsMessage) param.getResult();
+                try {
+                    if (originalResult != null && getObjectField(originalResult, "mWrappedSmsMessage") != null) {
+                        Log.d(TAG, "message and wrapped message are non-null. use them");
+                        return;
+                    }
+                } catch (Exception e) {
+                    Log.w(TAG, "Original message body is not available. Try to use GSM");
+                }
+                Object gsmResult = callStaticMethod(findClass(INTERNAL_GSM_SMS_MESSAGE, null), createFromPdu, param.args[0]);
+                setObjectField(originalResult, "mWrappedSmsMessage", gsmResult);
+            }
+        });
+        findAndHookMethod(SmsMessage.class, createFromPdu, byte[].class, String.class, new XC_MethodHook() {
             @Override
             protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
                 Log.d(TAG, "Create from PDU");
-                if(!SmsUtils.FORMAT_3GPP.equals(param.args[1])) {
+                if (!SmsUtils.FORMAT_3GPP.equals(param.args[1])) {
                     try {
-                        Log.d(TAG, "Trying to parse pdu in GSM 3GPP");
+                        Log.d(TAG, "Trying to parse fake pdu");
                         SmsMessage result = (SmsMessage) callStaticMethod(SmsMessage.class, "createFromPdu", param.args[0], SmsUtils.FORMAT_3GPP);
-                        if (result.getServiceCenterAddress().equals(SmsUtils.SERVICE_CENTER)) {
+                        if (result != null && getObjectField(result, "mWrappedSmsMessage") != null) {
                             param.setResult(result);
                         } else {
-                            Log.w(TAG, "Expected service center " + SmsUtils.SERVICE_CENTER + " for Google Voice message. Falling back to default format");
+                            Log.w(TAG, "Something with the message was null");
                         }
-                    } catch (Throwable e) {
-                        Log.w(TAG, "Error parsing in GSM 3GPP. Falling back to default behavior", e);
+                    } catch (Exception e) {
+                        Log.w(TAG, "Unable to parse message as " + SmsMessage.class.getName(), e);
                     }
                 }
             }
@@ -175,6 +198,8 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
             if (mEnabled) {
                 Log.d(TAG, "Sending via google voice");
                 attemptSendViaGoogleVoice(param);
+                // If we get here the user wants to use GV so stop.
+                param.setResult(null);
             } else {
                 Log.d(TAG, "Sending via carrier based on settings");
             }
@@ -206,13 +231,15 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
             }
             try {
                 if (sendText(destAddr, scAddr, texts, sentIntents, deliveryIntents)) {
-                    // If we sent via Google Voice, stop the system from sending its sms
-                    param.setResult(null);
+                    Log.i(TAG, "Intent for message to be sent via GV successful");
                 } else {
-                    Log.i(TAG, "Send text failed. Using regluar number");
+                    Log.i(TAG, "Send text failed.");
+                    // If it fails, fail the message
+                    XVoicePlusService.fail(sentIntents);
                 }
             } catch (IOException e) {
                 Log.e(TAG, "Error attempting to send message via Google Voice", e);
+                XVoicePlusService.fail(sentIntents);
             }
         }
 
