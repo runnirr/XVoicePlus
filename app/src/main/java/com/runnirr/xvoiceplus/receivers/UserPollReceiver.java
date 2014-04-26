@@ -13,14 +13,16 @@ import android.preference.PreferenceManager;
 import android.support.v4.content.WakefulBroadcastReceiver;
 import android.util.Log;
 
-public class UserPollReceiver extends WakefulBroadcastReceiver {
+public class UserPollReceiver extends XVoicePlusReceiver {
     private static final String TAG = UserPollReceiver.class.getName();
     public static final String USER_POLL = "com.runnirr.xvoiceplus.USER_POLL";
     
     @Override
     public void onReceive(Context context, Intent intent) {
-        intent.setClass(context, XVoicePlusService.class);
-        startWakefulService(context, intent); 
+        if (isEnabled(context)) {
+            intent.setClass(context, XVoicePlusService.class);
+            startWakefulService(context, intent);
+        }
     }
 
     private static PendingIntent getUserPollPendingIntent(Context context) {
@@ -33,10 +35,8 @@ public class UserPollReceiver extends WakefulBroadcastReceiver {
     }
 
     public static void startAlarmManager(Context context) {
-        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
-        if (preferences.getBoolean("settings_enabled", false)) {
-            String pollingFreqStr = preferences.getString("settings_polling_frequency",
-                    context.getString(R.string.default_polling_frequency));
+        if (isEnabled(context)) {
+            String pollingFreqStr = getPreferences(context).getString("settings_polling_frequency", context.getString(R.string.default_polling_frequency));
             long pollingFreq = Long.valueOf(pollingFreqStr);
             Log.i(TAG, "PollingFreq: " + pollingFreq);
 
