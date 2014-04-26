@@ -7,7 +7,7 @@ import android.util.Log;
 
 import com.runnirr.xvoiceplus.XVoicePlusService;
 
-public class MessageEventReceiver extends WakefulBroadcastReceiver {
+public class MessageEventReceiver extends XVoicePlusReceiver {
     private static final String TAG = MessageEventReceiver.class.getName();
 
     public static final String INCOMING_VOICE = "com.runnirr.xvoiceplus.INCOMING_VOICE";
@@ -15,8 +15,10 @@ public class MessageEventReceiver extends WakefulBroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        Log.d(TAG, "Received intent for " + intent.getAction());
-        intent.setClass(context, XVoicePlusService.class);
-        startWakefulService(context, intent);
+        if (isEnabled(context)) {
+            Log.d(TAG, "Received intent for " + intent.getAction());
+            intent.setClass(context, XVoicePlusService.class);
+            startWakefulService(context, intent);
+        }
     }
 }

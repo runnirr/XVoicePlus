@@ -3,7 +3,6 @@
     <SwitchPreference
         android:key="settings_enabled"
         android:title="@string/settings_enable_toggle"
-        android:summary="@string/settings_enable_toggle_summary"
         android:defaultValue="false"
         android:persistent="true"
         android:disableDependentsState="false"/>

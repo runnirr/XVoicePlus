@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.IntentService;
 import android.app.PendingIntent;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
@@ -26,9 +27,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-/**
- * Created by koush on 7/5/13.
- */
+
 public class XVoicePlusService extends IntentService {
     private static final String TAG = XVoicePlusService.class.getName();
     
@@ -50,6 +49,10 @@ public class XVoicePlusService extends IntentService {
         return getSharedPreferences("recent_messages", MODE_PRIVATE);
     }
 
+    private SharedPreferences getSettings() {
+        return getSharedPreferences("com.runnirr.xvoiceplus_preferences", Context.MODE_WORLD_READABLE);
+    }
+
     // parse out the intent extras from android.intent.action.NEW_OUTGOING_SMS
     // and send it off via google voice
     private void handleOutgoingSms(Intent intent) {
@@ -65,6 +68,9 @@ public class XVoicePlusService extends IntentService {
 
     @Override
     protected void onHandleIntent(final Intent intent) {
+        if (!getSettings().getBoolean("settings_enabled", false)) {
+            return;
+        }
         Log.d(TAG, "Handling intent for action " + intent.getAction());
         // handle an outgoing sms
         if (MessageEventReceiver.OUTGOING_SMS.equals(intent.getAction())) {

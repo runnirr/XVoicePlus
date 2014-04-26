@@ -27,14 +27,12 @@ import android.content.res.XResources;
 import android.os.Build;
 import android.telephony.SmsManager;
 import android.telephony.SmsMessage;
-import android.telephony.TelephonyManager;
 import android.util.Log;
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.IXposedHookZygoteInit;
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XSharedPreferences;
 import de.robv.android.xposed.XposedBridge;
-import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_LoadPackage.LoadPackageParam;
 
 public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit {
@@ -45,7 +43,9 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
 
     private static final String PERM_BROADCAST_SMS = "android.permission.BROADCAST_SMS";
 
-    private boolean mEnabled;
+    private boolean isEnabled() {
+        return new XSharedPreferences("com.runnirr.xvoiceplus").getBoolean("settings_enabled", true);
+    }
 
     @Override
     public void handleLoadPackage(LoadPackageParam lpparam) throws ClassNotFoundException {
@@ -77,7 +77,6 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
     @Override
     public void initZygote(StartupParam startupParam) {
         XResources.setSystemWideReplacement("android", "bool", "config_sms_capable", true);
-        mEnabled = new XSharedPreferences("com.runnirr.xvoiceplus").getBoolean("settings_enabled", false);
 
         hookSendSms();
         hookXVoicePlusPermission();
@@ -195,7 +194,7 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
 
         @Override
         protected void beforeHookedMethod(final MethodHookParam param) throws Throwable {
-            if (mEnabled) {
+            if (isEnabled()) {
                 Log.d(TAG, "Sending via google voice");
                 attemptSendViaGoogleVoice(param);
                 // If we get here the user wants to use GV so stop.
