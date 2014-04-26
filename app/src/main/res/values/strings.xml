@@ -20,6 +20,7 @@
     <string name="account">Account</string>
     <string name="not_granted">Permission unavailable:\n%s</string>
     <string name="xvoiceplus_started">XVoice+ is now running. SMS messages will be sent through Google Voice.</string>
+    <string name="empty"></string>
 
     <string name="settings_enable_toggle">Enable XVoice+</string>
     <string name="settings_enable_toggle_summary">Reboot after changing</string>
@@ -27,6 +28,8 @@
     <string name="settings_propagate_delete_summary_on">Deleted message will be deleted on Google Voice</string>
     <string name="settings_propagate_delete_summary_off">Deleted message will not affect Google Voice</string>
     <string name="settings_polling_frequency">Polling Frequency</string>
+    <string name="settings_incoming_prefix">Incoming Message Prefix</string>
+    <string name="settings_incoming_suffix">Incoming Message Suffix</string>
 
     <string-array name="polling_frequency_choices">
         <item name="never">Never</item>

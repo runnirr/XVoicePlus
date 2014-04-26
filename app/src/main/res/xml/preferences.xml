@@ -22,6 +22,19 @@
         android:defaultValue="@string/default_polling_frequency"
         android:persistent="true"/>
 
+    <EditTextPreference
+        android:dependency="settings_enabled"
+        android:key="settings_incoming_prefix"
+        android:title="@string/settings_incoming_prefix"
+        android:defaultValue="@string/empty"
+        android:persistent="true"/>
+
+    <EditTextPreference
+        android:dependency="settings_enabled"
+        android:key="settings_incoming_suffix"
+        android:title="@string/settings_incoming_suffix"
+        android:defaultValue="@string/empty"
+        android:persistent="true"/>
 <!--    
     <SwitchPreference 
         android:dependency="settings_enabled"

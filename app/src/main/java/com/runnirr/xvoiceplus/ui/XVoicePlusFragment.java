@@ -5,6 +5,7 @@ import com.runnirr.xvoiceplus.XVoicePlusService;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.preference.EditTextPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceFragment;
@@ -41,6 +42,9 @@ public class XVoicePlusFragment extends PreferenceFragment {
         if (pref instanceof ListPreference) {
             ListPreference listPref = (ListPreference) pref;
             listPref.setSummary(listPref.getEntry());
+        } else if (pref instanceof EditTextPreference) {
+            EditTextPreference textPref = (EditTextPreference) pref;
+            textPref.setSummary(textPref.getText());
         }
     }
 }
