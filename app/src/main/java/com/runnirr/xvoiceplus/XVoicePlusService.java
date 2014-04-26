@@ -86,13 +86,10 @@ public class XVoicePlusService extends IntentService {
         else if (GoogleVoiceManager.ACCOUNT_CHANGED.equals(intent.getAction())) {
             mGVManager = new GoogleVoiceManager(this);
         }
-        else {
-            startRefresh();
-        }
     }
 
     // mark all sent intents as failures
-    public void fail(List<PendingIntent> sentIntents) {
+    public static void fail(List<PendingIntent> sentIntents) {
         if (sentIntents == null)
             return;
         for (PendingIntent si: sentIntents) {
@@ -243,7 +240,7 @@ public class XVoicePlusService extends IntentService {
         if (!messageExists(m, URI_RECEIVED)){
             try{
                 SmsUtils.createFakeSms(this, m.phoneNumber, m.message, m.date);
-            } catch (IOException e){
+            } catch (IOException e) {
                 Log.e(TAG, "IOException when creating fake sms, ignoring");
             }
         }
@@ -277,7 +274,6 @@ public class XVoicePlusService extends IntentService {
     private void updateMessages() throws Exception {
         Log.d(TAG, "Updating messages");
         List<Conversation> conversations = mGVManager.retrieveMessages();
-        Log.d(TAG, "Converstions: " + conversations);
 
         long timestamp = getAppSettings().getLong("timestamp", 0);
         LinkedList<Message> oldMessages = new LinkedList<Message>();
@@ -294,6 +290,8 @@ public class XVoicePlusService extends IntentService {
                 }
             }
         }
+
+        Log.d(TAG, "New message count: " + newMessages.size());
 
         // sort by date order so the events get added in the same order
         Collections.sort(newMessages, new Comparator<Message>() {
@@ -326,8 +324,7 @@ public class XVoicePlusService extends IntentService {
                     Log.d(TAG, "Message " + message.id + " was already pushed.");
                     getRecentMessages().edit().putStringSet("push_messages", recentPushMessages);
                 } else {
-                    insertMessage(message);
-                    //synthesizeMessage(message);
+                    synthesizeMessage(message);
                 }
             }
         }

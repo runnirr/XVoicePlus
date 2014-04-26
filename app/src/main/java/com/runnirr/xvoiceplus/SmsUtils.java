@@ -18,6 +18,7 @@ public class SmsUtils {
     public static final int OP_WRITE_SMS = 15;
     public static final String SERVICE_CENTER = "5555555555";   // Fake so we know its a fake message
 
+
     public static void createFakeSms(Context context, String sender, String body, long date) throws IOException {
         byte[] pdu = null;
         byte[] scBytes = PhoneNumberUtils.networkPortionToCalledPartyBCD(SERVICE_CENTER);
@@ -35,9 +36,8 @@ public class SmsUtils {
         dateBytes[6] = reverseByte((byte) longToTimezone(calendar.get(Calendar.ZONE_OFFSET) +
                 calendar.get(Calendar.DST_OFFSET)));
 
-        ByteArrayOutputStream bo = null;
+        ByteArrayOutputStream bo = new ByteArrayOutputStream();
         try {
-            bo = new ByteArrayOutputStream();
             bo.write(lsmcs);
             bo.write(scBytes);
             bo.write(0x04);
@@ -67,18 +67,12 @@ public class SmsUtils {
             bo.close();
         }
 
+        broadcastMessage(context, pdu);
+    }
+
+    private static void broadcastMessage(Context context, byte[] pdu) {
         Log.d(TAG, "Creating fake sms. Broadcasting...");
-
-        /*String action = "android.provider.Telephony.SMS_RECEIVED";
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            action = "android.provider.Telephony.SMS_DELIVER";
-        }
-        Intent intent = new Intent();
-        intent.setAction(action);
-        intent.putExtra("pdus", new Object[] { pdu });
-        intent.putExtra("format", FORMAT_3GPP);
-        context.sendOrderedBroadcast(intent, "android.permission.RECEIVE_SMS");*/
-
+        //Log.d(TAG, "Broadcasting pdu " + bytesToHex(pdu));
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             String deliver_action = "android.provider.Telephony.SMS_DELIVER";
@@ -87,7 +81,7 @@ public class SmsUtils {
                 .setFlags(0)
                 .putExtra("pdus", new Object[] { pdu })
                 .putExtra("format", FORMAT_3GPP);
-            context.sendBroadcast(intent, "android.permission.BROADCAST_SMS");
+            context.sendBroadcast(intent, "android.permission.RECEIVE_SMS");
         }
         String received_action = "android.provider.Telephony.SMS_RECEIVED";
         Intent intent = new Intent()
@@ -96,7 +90,6 @@ public class SmsUtils {
             .putExtra("pdus", new Object[] { pdu })
             .putExtra("format", FORMAT_3GPP);
         context.sendBroadcast(intent, "android.permission.RECEIVE_SMS");
-
     }
 
     private static byte reverseByte(byte b) {
