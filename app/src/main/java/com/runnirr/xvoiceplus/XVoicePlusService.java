@@ -126,13 +126,9 @@ public class XVoicePlusService extends IntentService {
             }
         }
     }
-    
-    private final Object pushMessagesLock = new Object();
-
 
     // mark an outgoing text as recently sent, so if it comes in via
     // round trip, we ignore it.
-    private final Object recentLock = new Object();
     private void addRecent(String text) {
         SharedPreferences savedRecent = getRecentMessages();
         Set<String> recentMessage = savedRecent.getStringSet("recent", new HashSet<String>());
@@ -196,11 +192,6 @@ public class XVoicePlusService extends IntentService {
     private static final Uri URI_SENT = Uri.parse("content://sms/sent");
     private static final Uri URI_RECEIVED = Uri.parse("content://sms/inbox");
 
-    boolean messageExists(Message m) {
-        Uri uri = m.type == VOICE_INCOMING_SMS ? URI_RECEIVED : URI_SENT;
-        return messageExists(m, uri);
-    }
-    
     boolean messageExists(Message m, Uri uri) {
         Cursor c = getContentResolver().query(uri, null, "date = ? AND body = ?",
                 new String[] { String.valueOf(m.date), m.message }, null);
@@ -224,7 +215,7 @@ public class XVoicePlusService extends IntentService {
         if (m.type == VOICE_INCOMING_SMS) {
             uri = URI_RECEIVED;
             type = PROVIDER_INCOMING_SMS;
-            m.message = messageWithPreffixSuffix(m.message);
+            m.message = messageWithPrefixSuffix(m.message);
         } else if (m.type == VOICE_OUTGOING_SMS) {
             uri = URI_SENT;
             type = PROVIDER_OUTGOING_SMS;
@@ -247,14 +238,14 @@ public class XVoicePlusService extends IntentService {
     void synthesizeMessage(Message m) {
         if (!messageExists(m, URI_RECEIVED)){
             try{
-                SmsUtils.createFakeSms(this, m.phoneNumber, messageWithPreffixSuffix(m.message), m.date);
+                SmsUtils.createFakeSms(this, m.phoneNumber, messageWithPrefixSuffix(m.message), m.date);
             } catch (IOException e) {
                 Log.e(TAG, "IOException when creating fake sms, ignoring");
             }
         }
     }
 
-    private String messageWithPreffixSuffix(String message) {
+    private String messageWithPrefixSuffix(String message) {
         SharedPreferences settings = getSettings();
         return String.format(Locale.getDefault(), "%s%s%s",
                 settings.getString("settings_incoming_prefix", ""),
@@ -276,13 +267,15 @@ public class XVoicePlusService extends IntentService {
             Cursor c = getContentResolver().query(uri, null, "date = ? AND body = ?",
                     new String[] { String.valueOf(message.date), message.message }, null);
             try {
-                if(c.moveToFirst()){
+                if(c != null && c.moveToFirst()){
                     mGVManager.markGvMessageRead(message.id, 1);
                 }
             } catch (Exception e) {
                 Log.w(TAG, "Error marking message as read. ID: " + message.id, e);
             } finally {
-                c.close();
+                if (c != null) {
+                    c.close();
+                }
             }
         }
     }
@@ -292,7 +285,6 @@ public class XVoicePlusService extends IntentService {
         List<Conversation> conversations = mGVManager.retrieveMessages();
 
         long timestamp = getAppSettings().getLong("timestamp", 0);
-        LinkedList<Message> oldMessages = new LinkedList<Message>();
         LinkedList<Message> newMessages = new LinkedList<Message>();
         for (Conversation conversation: conversations) {
             for (Message m : conversation.messages) {
@@ -300,8 +292,6 @@ public class XVoicePlusService extends IntentService {
                     markReadIfNeeded(m);
                     if (m.date > timestamp) {
                         newMessages.add(m);
-                    } else {
-                        oldMessages.add(m);
                     }
                 }
             }

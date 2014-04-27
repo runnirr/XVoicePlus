@@ -3,6 +3,7 @@ package com.runnirr.xvoiceplus.ui;
 import com.runnirr.xvoiceplus.R;
 import com.runnirr.xvoiceplus.XVoicePlusService;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.preference.EditTextPreference;
@@ -14,6 +15,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import org.jetbrains.annotations.NotNull;
+
 public class XVoicePlusFragment extends PreferenceFragment {
 
     @Override
@@ -21,11 +24,14 @@ public class XVoicePlusFragment extends PreferenceFragment {
         super.onCreate(savedInstanceState);
 
         addPreferencesFromResource(R.xml.preferences);
-        getActivity().startService(new Intent(getActivity(), XVoicePlusService.class));
+        Activity act = getActivity();
+        if (act != null) {
+            act.startService(new Intent(getActivity(), XVoicePlusService.class));
+        }
     }
 
     @Override
-    public View onCreateView(LayoutInflater li, ViewGroup vg, Bundle b) {
+    public View onCreateView(@NotNull LayoutInflater li, ViewGroup vg, Bundle b) {
         View result = super.onCreateView(li, vg, b);
         PreferenceScreen preferenceScreen = getPreferenceScreen();
         for (int i = 0; i < preferenceScreen.getPreferenceCount(); i++) {

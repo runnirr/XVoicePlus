@@ -3,7 +3,6 @@ package com.runnirr.xvoiceplus.gv;
 import android.accounts.AccountManager;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
 import android.util.Log;
 
 import com.koushikdutta.async.http.libcore.RawHeaders;
@@ -26,7 +25,10 @@ public class GvHeadersCallback implements HeadersCallback {
     public void onHeaders(RawHeaders headers) {
         if (headers.getResponseCode() == 401) {
             Log.e(TAG, "Refresh failed:\n" + headers.toHeaderString());
-            AccountManager.get(mContext).invalidateAuthToken("com.google", mAuthToken);
+            AccountManager am = AccountManager.get(mContext);
+            if (am != null) {
+                am.invalidateAuthToken("com.google", mAuthToken);
+            }
             removeRnrse();
         }
     }
