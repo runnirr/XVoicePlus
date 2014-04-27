@@ -6,6 +6,7 @@ import android.app.Activity;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.os.Bundle;
+import android.preference.PreferenceScreen;
 
 public class XVoicePlusSetup extends Activity implements OnSharedPreferenceChangeListener {
 
@@ -23,15 +24,25 @@ public class XVoicePlusSetup extends Activity implements OnSharedPreferenceChang
     @Override
     public void onResume() {
         super.onResume();
-        mVPFragment.getPreferenceScreen().getSharedPreferences()
-                .registerOnSharedPreferenceChangeListener(this);
+        PreferenceScreen ps = mVPFragment.getPreferenceScreen();
+        if (ps != null) {
+            SharedPreferences sp = ps.getSharedPreferences();
+            if (sp != null) {
+                sp.registerOnSharedPreferenceChangeListener(this);
+            }
+        }
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        mVPFragment.getPreferenceScreen().getSharedPreferences()
-                .unregisterOnSharedPreferenceChangeListener(this);
+        PreferenceScreen ps = mVPFragment.getPreferenceScreen();
+        if (ps != null) {
+            SharedPreferences sp = ps.getSharedPreferences();
+            if (sp != null) {
+                sp.unregisterOnSharedPreferenceChangeListener(this);
+            }
+        }
     }
 
     @Override

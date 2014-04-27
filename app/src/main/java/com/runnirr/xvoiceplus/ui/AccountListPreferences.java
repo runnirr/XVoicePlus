@@ -5,6 +5,7 @@ import com.runnirr.xvoiceplus.gv.GoogleVoiceManager;
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.util.AttributeSet;
@@ -21,33 +22,38 @@ public class AccountListPreferences extends ListPreference {
     public AccountListPreferences(Context context, AttributeSet attrs) {
         super(context, attrs);
 
-        final Account[] accounts = AccountManager.get(context).getAccountsByType("com.google");
-        String[] entries = new String[accounts.length];
-        for (int i = 0; i < accounts.length; i++) {
-            entries[i] = accounts[i].name;
-        }
-        setEntries(entries);
-        setEntryValues(entries);
-
-        setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
-
-            @Override
-            public boolean onPreferenceChange(Preference preference, Object newValue) {
-                String newAccountString = (String) newValue;
-                Log.d(TAG, "Account changed to " + newValue);
-                for (int i = 0; i < accounts.length; i++) {
-                    if (accounts[i].name.equals(newAccountString)) {
-                        final String previousAccount = getSharedPreferences().getString("account", null);
-                        GoogleVoiceManager.invalidateToken(getContext(), previousAccount);
-
-                        final Account newAccount = accounts[i];
-                        GoogleVoiceManager.getToken(getContext(), newAccount);
-
-                        return true;
-                    }
-                }
-                return false;
+        AccountManager am = AccountManager.get(context);
+        if (am != null) {
+            final Account[] accounts = am.getAccountsByType("com.google");
+            String[] entries = new String[accounts.length];
+            for (int i = 0; i < accounts.length; i++) {
+                entries[i] = accounts[i].name;
             }
-        });
+            setEntries(entries);
+            setEntryValues(entries);
+
+            setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
+
+                @Override
+                public boolean onPreferenceChange(Preference preference, Object newValue) {
+                    String newAccountString = (String) newValue;
+                    Log.d(TAG, "Account changed to " + newValue);
+                    for (Account account : accounts) {
+                        if (account.name.equals(newAccountString)) {
+                            SharedPreferences prefs = getSharedPreferences();
+                            if (prefs != null) {
+                                final String previousAccount = prefs.getString("account", null);
+                                GoogleVoiceManager.invalidateToken(getContext(), previousAccount);
+
+                                GoogleVoiceManager.getToken(getContext(), account);
+
+                                return true;
+                            }
+                        }
+                    }
+                    return false;
+                }
+            });
+        }
     }
 }

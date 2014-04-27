@@ -64,12 +64,15 @@ public class XVoicePlus implements IXposedHookLoadPackage, IXposedHookZygoteInit
                 Log.d(TAG, "Received incoming Google Voice notification");
                 Context context = (Context) param.args[0];
                 Intent gvIntent = (Intent) param.args[1];
+                if (gvIntent != null && gvIntent.getExtras() != null) {
+                    Intent intent = new Intent()
+                            .setAction(MessageEventReceiver.INCOMING_VOICE)
+                            .putExtras(gvIntent.getExtras());
 
-                Intent intent = new Intent()
-                    .setAction(MessageEventReceiver.INCOMING_VOICE)
-                    .putExtras(gvIntent.getExtras());
-
-                context.sendOrderedBroadcast(intent, null);
+                    context.sendOrderedBroadcast(intent, null);
+                } else {
+                    Log.w(TAG, "Null intent when hooking incoming GV message");
+                }
             }
         });
     }

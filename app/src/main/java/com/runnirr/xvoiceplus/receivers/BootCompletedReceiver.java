@@ -2,8 +2,6 @@ package com.runnirr.xvoiceplus.receivers;
 
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.support.v4.content.WakefulBroadcastReceiver;
 import android.widget.Toast;
 
 import com.runnirr.xvoiceplus.R;
