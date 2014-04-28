@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Calendar;
+import java.util.TimeZone;
 
 import android.content.Context;
 import android.content.Intent;
@@ -30,11 +31,18 @@ public class SmsUtils {
         dateBytes[0] = reverseByte((byte) decToHex((calendar.get(Calendar.YEAR) % 100)));
         dateBytes[1] = reverseByte((byte) decToHex((calendar.get(Calendar.MONTH) + 1)));
         dateBytes[2] = reverseByte((byte) decToHex((calendar.get(Calendar.DAY_OF_MONTH))));
-        dateBytes[3] = reverseByte((byte) decToHex((calendar.get(Calendar.HOUR_OF_DAY) - 7)));  // WHY IS 2 HOURS MAGIC
-        dateBytes[4] = reverseByte((byte) decToHex((calendar.get(Calendar.MINUTE) - 30)));      // WHY SO MAGICAL
+        dateBytes[3] = reverseByte((byte) decToHex((calendar.get(Calendar.HOUR_OF_DAY))));
+        dateBytes[4] = reverseByte((byte) decToHex((calendar.get(Calendar.MINUTE))));
         dateBytes[5] = reverseByte((byte) decToHex((calendar.get(Calendar.SECOND))));
         dateBytes[6] = reverseByte((byte) longToTimezone(calendar.get(Calendar.ZONE_OFFSET) +
                 calendar.get(Calendar.DST_OFFSET)));
+
+        //Log.d(TAG, "GV Time: " + date);
+        //Log.d(TAG, "TimeZone: " + calendar.getTimeZone().getDisplayName());
+        //Log.d(TAG, "ZoneOffset: " + calendar.get(Calendar.ZONE_OFFSET));
+        //Log.d(TAG, "DstOffset: " + calendar.get(Calendar.DST_OFFSET));
+        //Log.d(TAG, "dateBytes: " + bytesToHex(dateBytes));
+
 
         ByteArrayOutputStream bo = new ByteArrayOutputStream();
         try {
@@ -103,11 +111,17 @@ public class SmsUtils {
     }
 
     private static int longToTimezone(long millis) {
-        return decToHex((int) (millis / (60 * 1000 * 15)));
+        int units = (int) Math.abs(millis / (60 * 1000 * 15));
+        int mask = millis < 0 ? 0x80 : 0x00;
+        int result = decToHex(units) | mask;
+        //Log.d(TAG, "units: " + units);
+        //Log.d(TAG, "mask hex: " + bytesToHex((byte) mask));
+        //Log.d(TAG, "result hex: " + bytesToHex((byte) result));
+        return result;
     }
 
     private static final char[] hexArray = "0123456789ABCDEF".toCharArray();
-    private static String bytesToHex(byte[] bytes) {
+    private static String bytesToHex(byte... bytes) {
         char[] hexChars = new char[bytes.length * 2];
         for ( int j = 0; j < bytes.length; j++ ) {
             int v = bytes[j] & 0xFF;
