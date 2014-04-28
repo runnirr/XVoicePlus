@@ -81,7 +81,7 @@ public class SmsUtils {
                 .setFlags(0)
                 .putExtra("pdus", new Object[] { pdu })
                 .putExtra("format", FORMAT_3GPP);
-            context.sendBroadcast(intent, "android.permission.RECEIVE_SMS");
+            context.sendOrderedBroadcast(intent, "android.permission.RECEIVE_SMS");
         }
         String received_action = "android.provider.Telephony.SMS_RECEIVED";
         Intent intent = new Intent()
@@ -89,7 +89,7 @@ public class SmsUtils {
             .setFlags(0)
             .putExtra("pdus", new Object[] { pdu })
             .putExtra("format", FORMAT_3GPP);
-        context.sendBroadcast(intent, "android.permission.RECEIVE_SMS");
+        context.sendOrderedBroadcast(intent, "android.permission.RECEIVE_SMS");
     }
 
     private static byte reverseByte(byte b) {
