@@ -111,12 +111,18 @@ public class GoogleVoiceManager {
             Log.e(TAG, "Error verifying GV SMS forwarding", e);
         }
     }
+
+    private static Bundle getAccountBundle(Context context, String account) throws Exception {
+        AccountManager am = AccountManager.get(context);
+        if (am != null) {
+            return am.getAuthToken(new Account(account, "com.google"), "grandcentral", null, true, null, null)
+                    .getResult();
+        }
+        return null;
+    }
     
     private String getAuthToken() throws Exception {
-        Bundle bundle = AccountManager.get(mContext)
-                .getAuthToken(new Account(getAccount(), "com.google"),
-                        "grandcentral", null, true, null, null)
-                .getResult();
+        Bundle bundle = getAccountBundle(mContext, getAccount());
         return bundle.getString(AccountManager.KEY_AUTHTOKEN);
     }
     
@@ -185,10 +191,15 @@ public class GoogleVoiceManager {
             public void run() {
                 try {
                     // grab the auth token
-                    Bundle bundle = AccountManager.get(context).getAuthToken(new Account(account, "com.google"), "grandcentral", null, true, null, null).getResult();
+                    Bundle bundle = getAccountBundle(context, account);
                     String authToken = bundle.getString(AccountManager.KEY_AUTHTOKEN);
-                    AccountManager.get(context).invalidateAuthToken("com.google", authToken);
-                    Log.i(TAG, "Token invalidated.");
+                    AccountManager am = AccountManager.get(context);
+                    if (am != null) {
+                        am.invalidateAuthToken("com.google", authToken);
+                        Log.i(TAG, "Token invalidated.");
+                    } else {
+                        throw new Exception("No account manager found");
+                    }
                 }
                 catch (Exception e) {
                     Log.e(TAG, "error invalidating token", e);
