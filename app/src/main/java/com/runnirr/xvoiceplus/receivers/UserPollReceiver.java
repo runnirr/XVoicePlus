@@ -33,7 +33,8 @@ public class UserPollReceiver extends XVoicePlusReceiver {
 
     public static void startAlarmManager(Context context) {
         if (isEnabled(context)) {
-            String pollingFreqStr = getPreferences(context).getString("settings_polling_frequency", context.getString(R.string.default_polling_frequency));
+            String defaultPollingFreq = context.getString(R.string.default_polling_frequency);
+            String pollingFreqStr = getPreferences(context).getString("settings_polling_frequency", defaultPollingFreq);
             long pollingFreq = Long.valueOf(pollingFreqStr);
             Log.i(TAG, "PollingFreq: " + pollingFreq);
 

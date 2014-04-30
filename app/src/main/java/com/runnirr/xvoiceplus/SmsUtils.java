@@ -4,7 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Calendar;
-import java.util.TimeZone;
 
 import android.content.Context;
 import android.content.Intent;
