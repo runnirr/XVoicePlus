@@ -35,6 +35,14 @@
         android:title="@string/settings_incoming_suffix"
         android:defaultValue="@string/empty"
         android:persistent="true"/>
+
+    <CheckBoxPreference
+        android:dependency="settings_enabled"
+        android:key="settings_sync_on_incoming"
+        android:title="Sync On Incoming"
+        android:summary="Increases data usage but syncs outgoing messages across devices."
+        android:defaultValue="true"
+        android:persistent="true"/>
 <!--    
     <SwitchPreference 
         android:dependency="settings_enabled"
