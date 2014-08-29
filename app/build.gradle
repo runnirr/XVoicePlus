@@ -19,9 +19,9 @@ android {
 
 dependencies {
     compile 'com.android.support:support-v4:+'
-    compile 'com.google.code.gson:gson:2.2.4'
+    compile 'com.google.code.gson:gson:2.3'
     compile 'com.koushikdutta.async:androidasync:1.3.7'
     compile 'com.koushikdutta.ion:ion:1.3.7'
     compile 'com.intellij:annotations:+@jar'
-    provided files('XposedBridgeApi.jar')
+    provided files('lib/XposedBridgeApi-54.jar')
 }
