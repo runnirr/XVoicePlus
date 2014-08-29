@@ -83,7 +83,7 @@ public class XVoicePlusService extends IntentService {
             UserPollReceiver.completeWakefulIntent(intent);
         }
         else if (MessageEventReceiver.INCOMING_VOICE.equals(intent.getAction())) {
-            if(getSettings().getBoolean("settings_sync_on_incoming", true)) {
+            if(getSettings().getBoolean("settings_sync_outgoing", true)) {
                 startRefresh();
             }
             else {
@@ -92,7 +92,9 @@ public class XVoicePlusService extends IntentService {
             MessageEventReceiver.completeWakefulIntent(intent);
         }
         else if (BootCompletedReceiver.BOOT_COMPLETED.equals(intent.getAction())) {
-            startRefresh();
+            if(getSettings().getBoolean("settings_sync_outgoing", true)) {
+                startRefresh();
+            }
             BootCompletedReceiver.completeWakefulIntent(intent);
         }
         else if (GoogleVoiceManager.ACCOUNT_CHANGED.equals(intent.getAction())) {

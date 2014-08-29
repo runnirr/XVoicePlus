@@ -20,6 +20,7 @@
         android:entries="@array/polling_frequency_choices"
         android:entryValues="@array/polling_frequency_values"
         android:defaultValue="@string/default_polling_frequency"
+        android:summary="Poll google servers to sync both incoming and outgoing messages"
         android:persistent="true"/>
 
     <EditTextPreference
@@ -38,8 +39,8 @@
 
     <CheckBoxPreference
         android:dependency="settings_enabled"
-        android:key="settings_sync_on_incoming"
-        android:title="Sync On Incoming"
+        android:key="settings_sync_outgoing"
+        android:title="Sync Outgoing Messages"
         android:summary="Increases data usage but syncs outgoing messages across devices."
         android:defaultValue="true"
         android:persistent="true"/>
