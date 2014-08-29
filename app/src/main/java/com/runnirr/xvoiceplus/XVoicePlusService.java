@@ -83,7 +83,12 @@ public class XVoicePlusService extends IntentService {
             UserPollReceiver.completeWakefulIntent(intent);
         }
         else if (MessageEventReceiver.INCOMING_VOICE.equals(intent.getAction())) {
-            startRefresh();
+            if(getSettings().getBoolean("settings_sync_on_incoming", true)) {
+                startRefresh();
+            }
+            else {
+                synthesizeMessage(intent);
+            }
             MessageEventReceiver.completeWakefulIntent(intent);
         }
         else if (BootCompletedReceiver.BOOT_COMPLETED.equals(intent.getAction())) {
@@ -243,6 +248,22 @@ public class XVoicePlusService extends IntentService {
                 Log.e(TAG, "IOException when creating fake sms, ignoring");
             }
         }
+    }
+
+    void synthesizeMessage(Intent intent) {
+        if(MessageEventReceiver.INCOMING_VOICE.equals(intent.getAction())) {
+            Message message = new Message();
+            message.conversationId = intent.getExtras().getString("conversation_id");
+            message.id = intent.getExtras().getString("call_id");
+            message.type = VOICE_INCOMING_SMS;
+            message.message = intent.getExtras().getString("call_content");
+            message.phoneNumber = intent.getExtras().getString("sender_address");
+            message.date = Long.valueOf(intent.getExtras().getString("call_time"));
+            markReadIfNeeded(message);
+            getAppSettings().edit().putLong("timestamp", message.date).apply();
+            synthesizeMessage(message);
+        }
+        else Log.w(TAG, "Attempt to synthesize message from unknown/invalid intent");
     }
 
     private String messageWithPrefixSuffix(String message) {
